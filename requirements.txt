@@ -1,0 +1,12 @@
+requests
+pandas
+numpy
+scipy
+matplotlib
+seaborn
+lifelines
+networkx
+xenaPython
+qrcode
+pillow
+pypdf
