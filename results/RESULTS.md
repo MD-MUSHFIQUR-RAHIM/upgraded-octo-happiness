@@ -175,3 +175,12 @@ most of its accuracy even with moderate tanh distortions.
 
 ## Part 1 (to run on GPU): linear scale-up, d ∈ {25, 50, 100, 200}
 ## Part 3 (to run on GPU): neural SCIN v0 (MLP encoder + latent SEM) vs ERM-MLP
+
+## marimo notebook (molab / Colab GPU)
+
+`experiments/scin_gpu_notebook.py` — self-contained marimo notebook packaging
+Parts 1–3 for a GPU session (RTX PRO 6000 Blackwell 96 GB). Smoke mode
+(`SMOKE=True`) validated end-to-end headless via `marimo export html --run`
+on CPU: Part 1 d=20 F1=0.900, PNL 0.0→F1 0.928, 0.5→0.895 (matches
+gpu_scaleup.py). Set `SMOKE=False` for the real run; grant the CUDA GPU,
+keep fp64 (the notebook already does).
