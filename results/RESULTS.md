@@ -1,0 +1,97 @@
+# SCIN Prototype Results (Months 0–2 work package)
+
+**Status: GO/NO-GO GATE PASSED** (both gates in README v2.0)
+All results: CPU-only, PyTorch 2.15, seeds as stated, hyperparameters selected
+on held-out validation seeds (never on test seeds).
+
+---
+
+## Experiment A — Invariant-subgraph recovery
+
+Setup: d=10, Erdős–Rényi DAG with 10 edges, 2 environments, 3 edge mechanisms
+perturbed in env 2, n=1000/env, equal noise variances (A1). Ground truth =
+invariant subgraph. 5 test seeds; hyperparameters tuned on validation seed 100.
+
+| Method | Precision | Recall | F1 | SHD |
+|---|---|---|---|---|
+| Correlation thresholding | 0.169 ± 0.024 | 0.943 ± 0.114 | 0.286 ± 0.036 | 33.4 ± 6.2 |
+| NOTEARS-pooled | 0.763 ± 0.059 | 0.971 ± 0.057 | 0.851 ± 0.023 | 2.4 ± 0.5 |
+| NOTEARS-per-env + intersection | 0.741 ± 0.035 | 0.971 ± 0.057 | 0.839 ± 0.030 | 2.6 ± 0.5 |
+| **SCIN (ours)** | **0.925 ± 0.061** | **0.971 ± 0.057** | **0.945 ± 0.028** | **0.8 ± 0.4** |
+
+Key observations:
+- The entire advantage is in **precision** (+0.16–0.18): joint estimation plus
+  the invariance statistic removes both the environment-perturbed mechanisms
+  (which pooled methods *must* include) and noise-driven false edges.
+- Naive per-env intersection is *not* a substitute for the invariance module
+  (F1 0.839 vs 0.945) — it lacks the shared-structure statistical strength.
+- Pooled NOTEARS **cannot in principle** separate invariant from perturbed
+  mechanisms; its 0.851 F1 is exactly its invariant-subgraph ceiling.
+
+## Experiment B — OOD generalization under spurious shift
+
+Setup: 7-node SCM, continuous target, causal parents x1,x2 (grandparent x0),
+spurious feature s ← y with strength β ∈ {2.0, 1.0} across training envs,
+validation β=1.5,
+test β∈{0, −2}; n=2000/env. 10 seeds.
+
+| Method | MSE ID | MSE OOD (β=0) | MSE OOD (β=−2) |
+|---|---|---|---|
+| ERM (all features) | **0.462 ± 0.019** | 2.517 ± 0.096 | 10.125 ± 0.401 |
+| V-REx | 0.500 ± 0.020 | 2.400 ± 0.092 | 9.816 ± 0.402 |
+| Oracle (true parents) | 1.022 ± 0.033 | **1.008 ± 0.037** | **0.994 ± 0.025** |
+| **SCIN (ours)** | 1.022 ± 0.033 | **1.008 ± 0.037** | **0.994 ± 0.025** |
+
+- SCIN selected ancestors **{x0, x1, x2} in 10/10 seeds** — exact oracle
+  selection, and it excluded the spurious (s) and nuisance (z1, z2) features
+  every time.
+- OOD MSE improvement vs ERM at β=−2: **10.1× lower**, paired Cohen's d ≈ 22
+  (see `exp_b_ood.json` for exact values).
+- ERM's better *ID* MSE (0.46 vs 1.02) is the expected invariance trade-off:
+  the spurious feature is genuinely predictive in-distribution. SCIN pays a
+  2.2× ID penalty for a 10× OOD gain.
+- V-REx barely improves on ERM here: variance-of-risks is weak when a spurious
+  feature lowers risk in *all* training environments. This is a genuine,
+  reportable weakness of risk-variance invariance that mechanism-level
+  invariance (ours) does not share.
+
+## Honest negative results and fixes found during development
+
+1. **Binary-target variant of Exp B failed**: thresholding y breaks the
+   linear-Gaussian assumption (A1); spurious edges survived ancestor selection
+   (SCIN degenerated to ERM). Handled by using a continuous target; nonlinear /
+   discrete extensions are future work.
+2. **`tr(expm(W∘W)) − d` acyclicity overflows** once the augmented-Lagrangian
+   ρ grows (NaN propagation). Fixed with the polynomial constraint
+   `tr((I + W∘W/d)^d) − d`.
+3. **Standard NOTEARS is not orientation-identifiable** on linear-Gaussian
+   data (only Markov-equivalence-class identifiable); with unequal noise
+   variances it consistently recovered the *reversed* DAG. Fixed by
+   incorporating the equal-error-variance criterion (Peters & Bühlmann 2014)
+   as a residual-variance-homogeneity penalty evaluated in original units —
+   this is itself a reusable practical finding.
+4. **Evaluating the equal-variance criterion on standardized data is wrong**
+   (it penalizes the true DAG); it must be computed in original units.
+5. **Per-environment matrices must each be constrained acyclic**, otherwise
+   per-env deltas create cyclic fits that reach below the noise floor
+   (massive overfitting).
+6. **IRMv1 diverged regardless of λ** in this setting; replaced by V-REx as
+   the invariance baseline.
+
+## Limitations of the current prototype
+
+- Linear SCMs only; the neural (nonlinear, deep-encoder) instantiation of SCIN
+  is the Months 3–4 work package.
+- Equal-variance assumption (A1) is exact in synthetic data; robustness to its
+  violation is untested so far (planned ablation).
+- n=1000–2000, d=7–10; scaling behavior untested.
+- Two training environments only; more environments should sharpen the
+  invariance statistic.
+
+## Reproduce
+
+```bash
+python3 experiments/exp_a_graph_recovery.py   # ~12 min CPU
+python3 experiments/exp_b_ood.py              # ~4 min CPU
+```
+Raw numbers: `results/exp_a_graph_recovery.json`, `results/exp_b_ood.json`.
