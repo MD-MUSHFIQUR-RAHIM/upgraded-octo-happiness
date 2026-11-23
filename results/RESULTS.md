@@ -184,3 +184,19 @@ Parts 1–3 for a GPU session (RTX PRO 6000 Blackwell 96 GB). Smoke mode
 on CPU: Part 1 d=20 F1=0.900, PNL 0.0→F1 0.928, 0.5→0.895 (matches
 gpu_scaleup.py). Set `SMOKE=False` for the real run; grant the CUDA GPU,
 keep fp64 (the notebook already does).
+
+### GPU run #1 (RTX PRO 6000 Blackwell, 2026-11-23, real run)
+
+Part 1 linear scale-up (n_per_env=2000, 2 envs): F1 0.889 / 0.928 / 0.905 /
+0.958 at d = 25 / 50 / 100 / 200; precision 0.96–1.00, recall 0.80–0.92,
+SHD 5–18. Runtime flat: warm-start 13–17 s, SCIN 15–23 s per d. No
+high-dimensional breakdown up to d=200.
+
+Part 2 PNL reproduced on GPU exactly as on CPU (0.930 / 0.952 / 0.922 /
+0.856).
+
+Part 3 neural SCIN v0: negative result — OOD MSE 3.09/12.89 vs ERM-MLP
+0.45/2.00 (9 latents selected). Root cause hypothesis: v0 used an Adam
+inner solver for the latent SEM, the same optimizer that provably fails to
+converge in the linear fitters. v1 switches Part 3 to an L-BFGS inner
+solver (strong-Wolfe) and 5 refinement phases; awaiting GPU rerun.

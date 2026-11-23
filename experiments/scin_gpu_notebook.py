@@ -468,7 +468,7 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
         dtot_ = d_lat_ + 1
         mask3_ = 1.0 - torch.eye(dtot_, device=DEVICE)
         Ws3_np_ = None
-        for phase_ in range(2 if SMOKE else 3):
+        for phase_ in range(2 if SMOKE else 5):
             with torch.no_grad():
                 Zs_raw_ = [enc_(x) for x in lat_]
                 Zall_ = torch.vstack(Zs_raw_)
@@ -481,11 +481,17 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
             Wm_ = torch.zeros(dtot_, dtot_, device=DEVICE, requires_grad=True)
             Dl_ = [torch.zeros(dtot_, dtot_, device=DEVICE, requires_grad=True)
                    for _ in range(2)]
-            al_ = torch.optim.Adam([Wm_] + Dl_, lr=0.02)
+            # v1 fix: L-BFGS inner solver (Adam fails to converge here — the
+            # same failure mode found in the linear fitters).
+            opt3_ = torch.optim.LBFGS([Wm_] + Dl_,
+                                      max_iter=40 if SMOKE else 150,
+                                      tolerance_grad=1e-7,
+                                      tolerance_change=1e-11,
+                                      line_search_fn="strong_wolfe")
             rho_, alph_, hp_ = 1.0, 0.0, float("inf")
             for outer_ in range(10 if SMOKE else 30):
-                for _inner_ in range(40 if SMOKE else 150):
-                    al_.zero_grad()
+                def closure3_():
+                    opt3_.zero_grad()
                     Wse_ = [(Wm_ + D) * mask3_ for D in Dl_]
                     rec_ = sum(0.5 / len(Z) * torch.sum((Z - Z @ Wse_[e]) ** 2)
                                for e, Z in enumerate(Zsy_))
@@ -502,7 +508,9 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
                             + sum(0.5 * rho_ * he_ ** 2 + alph_ * he_
                                   for he_ in hs_))
                     obj_.backward()
-                    al_.step()
+                    return obj_
+
+                opt3_.step(closure3_)
                 with torch.no_grad():
                     hg_ = float(sum(h_poly((Wm_ + D) * mask3_) for D in Dl_))
                 if hg_ < 1e-4:
