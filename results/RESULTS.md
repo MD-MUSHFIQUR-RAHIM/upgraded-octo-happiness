@@ -148,3 +148,30 @@ direction does the work, not invariance. Honest implication: Exp B's current
 design cannot demonstrate the invariance filter's value; a confounded variant
 (spurious edge pointing INTO y, i.e. s→y via a latent env-dependent parent)
 is required. Added to the Month 3–4 work list.
+
+---
+
+# Phase-3: GPU Scale-up Package (READY — awaiting GPU run)
+
+`experiments/gpu_scaleup.py` — designed for a workstation GPU (e.g. RTX PRO
+6000 Blackwell 96 GB); validated end-to-end on CPU in smoke mode.
+
+Engineering fixes baked in (found by CPU validation):
+- L-BFGS inner solver is REQUIRED (Adam inner solver fails to converge, F1→0)
+- **fp64 is REQUIRED on GPU too**: fp32 overflows inside L-BFGS line search
+  as the augmented-Lagrangian rho grows. Cost is negligible at d≤200.
+
+## Part 2 preview — post-nonlinear (PNL) robustness (CPU fp64, 3 seeds)
+
+| PNL strength | F1 |
+|---|---|
+| 0.0 | 0.930 ± 0.005 |
+| 0.25 | 0.952 ± 0.034 |
+| 0.5 | 0.922 ± 0.068 |
+| 1.0 | 0.856 ± 0.064 |
+
+Graceful degradation under monotone nonlinearity — the linear estimator keeps
+most of its accuracy even with moderate tanh distortions.
+
+## Part 1 (to run on GPU): linear scale-up, d ∈ {25, 50, 100, 200}
+## Part 3 (to run on GPU): neural SCIN v0 (MLP encoder + latent SEM) vs ERM-MLP
