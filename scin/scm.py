@@ -58,6 +58,7 @@ def make_env_data(
     n_per_env: int = 1000,
     n_perturbed: int = 3,
     seed: int = 0,
+    noise_jitter: float = 0.0,
 ):
     """Generate environments sharing a DAG, with `n_perturbed` edge mechanisms
     having env-2 coefficients different from env-1.
@@ -87,7 +88,15 @@ def make_env_data(
                 We[i, j] = W_base[i, j] * rng.choice([0.3, 1.8, -1.0])
         W_envs.append(We)
 
-    Xs = [simulate_linear_sem(We, n_per_env, rng) for We in W_envs]
+    # per-node noise stds: 1 by default (A1, equal variances). noise_jitter > 0
+    # VIOLATES A1 (robustness testing): node j gets noise std 1 + u_j with
+    # u_j ~ Uniform(-jitter, +jitter), shared across environments.
+    noise_scale = None
+    if noise_jitter > 0:
+        noise_scale = 1.0 + rng.uniform(-noise_jitter, noise_jitter, size=d)
+        noise_scale = np.clip(noise_scale, 0.2, None)
+    Xs = [simulate_linear_sem(We, n_per_env, rng, noise_scale=noise_scale)
+          for We in W_envs]
 
     W_invariant = np.zeros_like(W_base, dtype=float)
     for (i, j) in edges:
