@@ -253,3 +253,36 @@ reproducibility): (1) target leakage — y (index 6) passed as its own
 predictor; (2) np.hstack on (n,1) blocks interleaves the two environments'
 rows, silently destroying the X-y correspondence. exp_b-ood did NOT have
 this bug (it used vstack).
+
+### 5-seed replication on GPU (2026-11-24): the Part-3 "win" was noise
+
+SCIN v2 (5 seeds, n=4000/env, 3 train envs): OOD0 0.436 ± 0.054 vs
+ERM-MLP 0.383 ± 0.019; OOD_neg 1.613 ± 0.375 vs ERM 1.487 ± 0.155.
+SCIN LOST on both metrics, with higher variance. The single-seed "win"
+(run #2) did not replicate. Mean latents selected 11.8/16 — selection
+prunes, but pruning does not translate into OOD gains.
+
+Additional probe (CPU, joint end-to-end training of encoder + latent SEM
+with AL/acyclicity/ev — 20 outer x 150 inner, converged hg<1e-6): OOD
+0.70 / 2.32 — WORSE. Three design generations tested (v0 random encoder,
+v2 pretrained encoder, joint AL): none reliably beats ERM-MLP on this
+task.
+
+Verdict (honest): the neural instantiation is a NEGATIVE result and a
+genuinely open problem — invariance structure in latent space is fragile
+when the encoder is free to entangle the spurious direction with causal
+ones. The paper's empirical core must be the linear setting, which is
+strong across every test:
+
+- Exp A (invariant subgraph recovery): F1 0.945 ± 0.028 vs NOTEARS-pooled 0.851
+- Part 1 (GPU, d up to 200): F1 0.889-0.958, precision ~1.0, flat runtime
+- Part 2 (PNL): graceful degradation, GPU == CPU exactly
+- Exp E (confounded, spurious edge INSIDE mechanism): SCIN == Oracle at
+  sign-flip shift (1.06 vs ERM 1.34), selection excludes s in 4/5 seeds
+- Exp B (child-side spurious): SCIN == Oracle, OOD MSE 0.99 vs ERM 10.1
+- Phase-2 ablations: equal-variance criterion is the load-bearing component
+
+Neural SCIN v2 and the joint-training probe go to the paper as documented
+negative results (Nature values honest negatives) and define future work:
+invariance-aware encoder training (the IRM connection), or identifying
+latent spurious directions directly.
