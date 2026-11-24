@@ -159,6 +159,38 @@ def fig4_ablation_violation():
     plt.close(fig)
 
 
+def fig6_e_sens():
+    """Exp E sensitivity heatmap: OOD_neg over (var_tol, tau); 'S!' marks
+    cells where the spurious s gets selected."""
+    import numpy as np
+    import matplotlib.colors as mcolors
+    d = jload("exp_e_sensitivity.json")
+    grid = d["grid_mean"]
+    vts = d["config"]["var_tols"]
+    taus = d["config"]["taus"]
+    M = np.zeros((len(vts), len(taus)))
+    S = np.zeros_like(M)
+    for a, vt in enumerate(vts):
+        for b, t in enumerate(taus):
+            c = grid[f"{vt}|{t}"]
+            M[a, b] = c["ood_neg_mean"]
+            S[a, b] = 1.0 if c["s_included"] else 0.0
+    fig, ax = plt.subplots(figsize=(5.4, 3.4))
+    im = ax.imshow(M, cmap="RdYlGn_r", aspect="auto")
+    ax.set_xticks(range(len(taus)), [str(t) for t in taus])
+    ax.set_yticks(range(len(vts)), [str(v) for v in vts])
+    ax.set_xlabel("invariance threshold tau")
+    ax.set_ylabel("variance tolerance var_tol")
+    for a in range(len(vts)):
+        for b in range(len(taus)):
+            ax.text(b, a, f"{M[a, b]:.2f}" + (" S!" if S[a, b] else ""),
+                    ha="center", va="center", fontsize=9)
+    plt.colorbar(im, ax=ax, label="OOD_neg MSE")
+    ax.set_title("Exp E selection-sensitivity (5 seeds)")
+    fig.savefig(os.path.join(FIGS, "fig6_e_sens.png"))
+    plt.close(fig)
+
+
 def fig5_icp():
     """ICP (node-wise subset search) vs SCIN at 2 and 4 environments."""
     data = {}
@@ -199,6 +231,10 @@ if __name__ == "__main__":
         fig5_icp()
     except FileNotFoundError as e:
         print("fig5 skipped:", e)
+    try:
+        fig6_e_sens()
+    except FileNotFoundError as e:
+        print("fig6 skipped:", e)
     print("figures written to", FIGS)
     for f in sorted(os.listdir(FIGS)):
         print("  ", f)

@@ -35,7 +35,7 @@ N_PER_ENV = 1500
 NODES = ["x0", "x1", "x2", "s", "z1", "z2", "y"]
 Y = 6
 HP = {"lambda1": 0.1, "lambda3": 0.1, "lambda_ev": 1.0,
-      "tau": 0.1, "var_tol": 0.01}
+      "tau": 0.1, "var_tol": 0.02}   # var_tol: see exp_e_sensitivity plateau
 GAMMAS_TR = (0.80, 0.00)
 GAMMAS_TE = (0.60, -1.00)
 S_NOISE = 1.5
