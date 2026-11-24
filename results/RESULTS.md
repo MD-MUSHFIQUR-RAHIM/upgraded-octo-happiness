@@ -213,3 +213,21 @@ seeds, n=1500/env): v2 OOD0 0.36-0.52, OOD_neg 1.52-1.60 vs ERM-MLP mean
 0.55 / 2.23 — beats ERM on average, esp. ood_neg (~30% lower). One seed
 selected 0 latents (filter too strict) — open issue. Notebook Part 3
 updated to this design; GPU rerun pending.
+
+### GPU run #2 (real, 2026-11-24): neural SCIN v2 — first GPU win
+
+Full pipeline ran end-to-end on the RTX PRO 6000 Blackwell (fp64 fix held).
+
+Part 1: unchanged from run #1 (F1 0.889/0.928/0.905/0.958 at d=25/50/100/200,
+precision 0.96-1.00, flat runtime). Part 2: PNL identical to CPU (0.930/
+0.952/0.922/0.856) — fully reproducible.
+
+Part 3 (v2, n=4000/env, 3 train envs): SCIN OOD0 0.4084 vs ERM 0.4122;
+SCIN OOD_neg 1.4187 vs ERM 1.5537 (~9% lower negative-shift error). First
+GPU-level result where the causal pipeline beats ERM under spurious shift.
+
+Caveats: single seed; 16/16 latents selected (the ancestor filter did NOT
+prune anything — the gain may come from latent-space ridge fitting rather
+than invariance-based selection). Required next: 5-seed replication and
+selection-diagnostics (does coercing a sparser selection hurt or help?)
+before any claim goes in the paper.
