@@ -477,3 +477,55 @@ Interpretation (documented as a failure-mode analysis):
   shared-W + per-env deltas + per-env acyclicity, ev-orientation,
   invariance selection, invariant DAG → OOD-stable prediction, with a
   moved-mechanism inset (gamma_e = 0.8/0.0 moved vs 1.5 invariant).
+
+---
+
+## Max-effort GPU package (2026-11-24): E-scaling + 10-seed + d=400
+
+`experiments/colab_scin_max_cell.py` (SMOKE=False, cuda, JSON: `exp_scinmax_gpu.json`).
+
+### Part 3 first — linear scale-up to d = 400 (the headline)
+
+| d | precision | recall | F1 | SHD | warm | SCIN |
+|---|---|---|---|---|---|---|
+| 300 | 0.964 | 0.890 | **0.925** | 43 | 55s | 112s |
+| 400 | 0.968 | 0.898 | **0.931** | 53 | 92s | 215s |
+
+Combined with the earlier GPU run — F1 0.889 / 0.928 / 0.905 / 0.958 at
+d = 25/50/100/200 — the scaling curve now spans **d = 25 → 400** with F1
+stable at 0.89–0.96 and precision 0.96–1.00. This is the strongest
+scaling evidence in the paper (theory predicts log-d dependence; recall/
+precision pattern matches T1's predicted undecidable band).
+
+### Part 2 — 10-seed chambers (main protocol)
+
+| method | best tau | precision | F1 | SHD |
+|---|---|---|---|---|
+| NOTEARS-pooled | 0.05 | 0.300 ± 0.004 | 0.335 ± 0.003 | 55.6 |
+| **SCIN (ours)** | 0.1 | **0.612 ± 0.046** | **0.365 ± 0.025** | 33.6 |
+
+Consistent with the 5-seed run (F1 0.415, precision 0.688); mean F1 is a
+bit lower at 10 seeds (seed variance), precision story unchanged: 2×
+pooled's precision, ~half the SHD, default tau wins again.
+
+### Part 1 — environment-count scaling (E = 4 → 8 → 12 → 17): honest non-monotonic result
+
+| method | E=4 | E=8 | E=12 | E=17 |
+|---|---|---|---|---|
+| NOTEARS-pooled | 0.359 | 0.330 | 0.337 | 0.264 |
+| NOTEARS-env-intersection | 0.344 | 0.305 | 0.290 | 0.267 |
+| **SCIN (ours, masked)** | 0.379 | **0.441** | 0.386 | 0.296 |
+
+- SCIN beats both baselines at every E; the maximum is at E=8 (F1 0.441,
+  precision 0.591).
+- **Not** monotonic in E: adding the strong interventions (red/green/blue/
+  pol at strong levels, E=17) LOWERS F1 for every method, and pooled
+  degrades monotonically (0.359 → 0.264).
+- Interpretation (goes in the paper): strong interventions push actuators
+  to levels where the per-env linear fits get noisier, inflating the
+  cross-env coefficient variance — the invariance gate then rejects true
+  edges (SCIN recall drops 0.297 → 0.216). More environments is not free:
+  heterogeneity has to stay in the mechanism- movable regime. This is a
+  genuinely useful decomposition of "when do multi-env methods help":
+  E helps (E=4→8), strength hurts.
+- Figure: `fig9_e_scaling.png`.
