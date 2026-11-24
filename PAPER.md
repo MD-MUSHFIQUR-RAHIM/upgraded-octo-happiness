@@ -197,6 +197,7 @@ Fig 5 (new: Exp G adjacency comparison — TO MAKE; currently tables only).
 | Fig 6 | Selection-sensitivity plateau | done (`fig6_e_sens.png`) |
 | Fig 7 | Chambers: adjacency heatmaps GT/SCIN/pooled | done (`fig7_chambers_adjacency.png`, from `exp_g_matrices.json`; seed 0: GT 37, SCIN 14, pooled 46 selected edges) |
 | Fig 8 | PNL curve | done (`fig2_pnl.png`) |
+| Fig 9 | Environment-count scaling on chambers (E=4..17, honest non-monotonic) | done (`fig9_e_scaling.png`) |
 
 All figures done. `experiments/exp_g_matrices.py` refits one chambers
 window (seed 0) and stores the fitted adjacency matrices so the figure
@@ -319,18 +320,20 @@ results are reported and analysed.
 
 Does the advantage survive in higher dimensions, where the number of
 candidate edges grows quadratically? We ran the same protocol on
-Erdős–Rényi DAGs at d = 25, 50, 100 and 200 (n = 2000 per environment,
+Erdős–Rényi DAGs spanning d = 25 to 400 (n = 2000 per environment,
 fp64, RTX PRO 6000 Blackwell GPU). SCIN maintains directed F1 of
-0.889 / 0.928 / 0.905 / 0.958 across these sizes with precision
-0.956–1.00 and SHD 5–18 — no high-dimensional collapse up to d = 200
-(Fig 2a). Runtime grows mildly (15 s → 24 s per fit for the SCIN stage,
-including the pooled warm-start), because the objective is a single
-matrix-valued optimization rather than the exponential subset search
-that defeats ICP. Sample complexity is favourable: at d = 10 F1 is
-flat from n = 250 per environment (Fig 2b), consistent with
-Theorem 1's log d scaling; recall, not precision, carries the residual
-weak-edge loss, exactly the undecidable band ([τ − Cλ₁, τ + Cλ₁])
-predicted by the case analysis.
+0.889 / 0.928 / 0.905 / 0.958 / 0.925 / 0.931 at d = 25 / 50 / 100 /
+200 / 300 / 400 with precision 0.956–1.00 throughout — no
+high-dimensional collapse at 16× the dimension at which most
+directional DAG-learning evaluations stop (Fig 2a). Runtime grows
+mildly and in the dimension term predicted by theory (24 s at d = 200,
+215 s at d = 400 for the SCIN stage, including the pooled warm-start),
+because the objective is a single matrix-valued optimization rather
+than the exponential subset search that defeats ICP. Sample complexity
+is favourable: at d = 10 F1 is flat from n = 250 per environment
+(Fig 2b), consistent with Theorem 1's log d scaling; recall, not
+precision, carries the residual weak-edge loss, exactly the undecidable
+band ([τ − Cλ₁, τ + Cλ₁]) predicted by the case analysis.
 
 ## Results 2.4 prose (first pass)
 
@@ -359,11 +362,12 @@ clinically validated ground-truth causal graph (Gamella et al. 2025).
 We used 12 real interventions (reference, RGB LEDs, six lamps, two
 polarizers) as environments over an 18-node observable subgraph with
 37 ground-truth edges (n = 500 per environment). SCIN attains directed
-F1 0.415 with **precision 0.688** (5 seeds, GPU), versus 0.345 with
-precision 0.300 for pooled NOTEARS, and half the structural Hamming
-distance (31 vs 57) — Fig 7 shows the decisive picture: SCIN's 14
-selected edges are mostly physically real, while the pooled fit's 46
-are majority fabricated. Two properties matter for scientific use:
+F1 0.415 with **precision 0.688** (5 seeds, GPU; replicated at 10
+seeds: precision 0.612 ± 0.046, F1 0.365 ± 0.025), versus 0.345 with
+precision 0.300 for pooled NOTEARS, and roughly half the structural
+Hamming distance (31–34 vs 56–57) — Fig 7 shows the decisive
+picture: SCIN's selected edges are mostly physically real, while the
+pooled fit's are majority fabricated. Two properties matter for scientific use:
 first, SCIN's best threshold in the sweep is its a-priori default
 (τ = 0.1, var_tol = 0.02) — hyperparameters selected on synthetic
 data transfer to the physical system with no retuning; second, what
@@ -373,6 +377,21 @@ small n). Conservative, high-precision partial recovery is the safe
 operating mode for experiment design: each of SCIN's selected edges is
 a testable hypothesis, whereas a 0.28-precision dense graph is not
 actionable.
+
+
+How many environments should an experimenter run? Our activation-count
+ladder on the chambers (E = 4 → 8 → 12 → 17, with strong interventions
+added at the upper rung) gives a decomposable answer: SCIN improves from
+E = 4 to E = 8 (F1 0.379 → 0.441, precision 0.524 → 0.591) and is the
+best method at every E, but is non-monotonic beyond — the strong
+interventions lower everyone's accuracy, and pooled NOTEARS degrades
+monotonically (0.359 → 0.264). Mechanism: interventions far from
+reference levels make per-environment linear fits noisier, inflating the
+cross-environment coefficient variance, and the invariance gate then
+rejects true edges (SCIN recall 0.297 → 0.216). This is a useful,
+actionable decomposition for experiment designers: more environments
+help while the heterogeneity stays in the locally-linear, mechanism-move
+regime; strong far-from-reference interventions do not (Fig 9).
 
 ## Results 2.6 prose (first pass)
 

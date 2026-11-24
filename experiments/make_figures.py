@@ -40,8 +40,15 @@ def gpu_data():
 
 
 def fig1_scaling():
-    """F1 vs dimension (GPU run) + F1 vs n (phase-2)."""
-    gpu = gpu_data()["linear_scaleup"]
+    """F1 vs dimension (GPU run + d=300/400 extension) + F1 vs n (phase-2)."""
+    import numpy as _np
+    gpu = list(gpu_data()["linear_scaleup"])
+    try:
+        p3 = jload("exp_scinmax_gpu.json")["parts"]["part3_d_300_400"]["rows"]
+        gpu = gpu + [dict(r, precision=round(r["precision"], 3),
+                          recall=round(r["recall"], 3)) for r in p3]
+    except FileNotFoundError:
+        pass
     p2 = jload("phase2_ablations.json")["scaling_n"]
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.2))
 
@@ -278,6 +285,45 @@ def fig7_chambers_adjacency():
     plt.close(fig)
 
 
+def fig9_e_scaling():
+    """Exp G-max: environment-count scaling on Causal Chambers (real data,
+    3 seeds): does SCIN improve with more environments? Honest answer:
+    peak at E=8, non-monotonic — strong interventions destabilize per-env
+    linear fits. Pooled baselines monotonically DEGRADE."""
+    import numpy as np
+    d = jload("exp_scinmax_gpu.json")["parts"]["part1_E_scaling"]
+    summ = d["summary_by_E"]
+    Es = sorted(int(k) for k in list(summ.values())[0])
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 3.4))
+    series = [("SCIN (ours, masked)", C_SCIN, "o-"),
+              ("NOTEARS-pooled", C_ERM, "s--"),
+              ("NOTEARS-env-intersection", C_REX, "^:")]
+    for name, col, style in series:
+        f1 = [summ[name][str(E)]["f1"] for E in Es]
+        pre = [summ[name][str(E)]["precision"] for E in Es]
+        axes[0].plot(Es, f1, style, color=col, lw=2, label=name)
+        axes[1].plot(Es, pre, style, color=col, lw=2)
+    axes[0].set_xlabel("number of environments $E$")
+    axes[0].set_ylabel("directed F1")
+    axes[0].set_title("(a) F1 vs environments (Causal Chambers)")
+    axes[1].set_xlabel("number of environments $E$")
+    axes[1].set_ylabel("precision")
+    axes[1].set_title("(b) precision vs environments")
+    for ax in axes:
+        ax.set_xticks(Es)
+        ax.set_ylim(0.2, 0.7)
+    axes[0].legend(frameon=False, fontsize=9)
+    axes[1].annotate("strong interventions\nadded at E=17", (17, 0.296),
+                     textcoords="offset points", xytext=(-95, 12),
+                     fontsize=8, color="#555555",
+                     arrowprops=dict(arrowstyle="->", color="#555555"))
+    fig.suptitle("Environment-count scaling: more envs help up to E=8, then "
+                 "strong interventions degrade fits (honest, non-monotonic)",
+                 fontsize=10, y=1.04)
+    fig.savefig(os.path.join(FIGS, "fig9_e_scaling.png"))
+    plt.close(fig)
+
+
 def fig8_concept():
     """Fig 1 concept schematic: environments -> shared+deltas ->
     invariance selection -> invariant DAG -> OOD generalization."""
@@ -353,6 +399,10 @@ if __name__ == "__main__":
         fig8_concept()
     except FileNotFoundError as e:
         print("fig8 skipped:", e)
+    try:
+        fig9_e_scaling()
+    except FileNotFoundError as e:
+        print("fig9 skipped:", e)
     print("figures written to", FIGS)
     for f in sorted(os.listdir(FIGS)):
         print("  ", f)

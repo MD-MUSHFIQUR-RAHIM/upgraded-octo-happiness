@@ -1,0 +1,54 @@
+{
+ "started": "2026-11-24 14:26:39",
+ "device": "cuda",
+ "smoke": false,
+ "parts": {
+  "part1_E_scaling": {
+   "n_seeds": 3,
+   "summary_by_E": {
+    "NOTEARS-env-intersection": {
+     "4": {"best_tau": 0.02, "f1": 0.344, "precision": 0.407, "recall": 0.297, "shd": 42.0},
+     "8": {"best_tau": 0.02, "f1": 0.305, "precision": 0.409, "recall": 0.243, "shd": 41.0},
+     "12": {"best_tau": 0.02, "f1": 0.29, "precision": 0.36, "recall": 0.243, "shd": 44.0},
+     "17": {"best_tau": 0.02, "f1": 0.267, "precision": 0.348, "recall": 0.216, "shd": 44.0}
+    },
+    "NOTEARS-pooled": {
+     "4": {"best_tau": 0.1, "f1": 0.359, "precision": 0.341, "recall": 0.378, "shd": 50.0},
+     "8": {"best_tau": 0.02, "f1": 0.33, "precision": 0.278, "recall": 0.405, "shd": 61.0},
+     "12": {"best_tau": 0.05, "f1": 0.337, "precision": 0.304, "recall": 0.378, "shd": 55.0},
+     "17": {"best_tau": 0.15, "f1": 0.264, "precision": 0.222, "recall": 0.324, "shd": 67.0}
+    },
+    "SCIN (ours, masked)": {
+     "4": {"best_tau": 0.15, "f1": 0.379, "precision": 0.524, "recall": 0.297, "shd": 36.0},
+     "8": {"best_tau": 0.1, "f1": 0.441, "precision": 0.591, "recall": 0.351, "shd": 33.0},
+     "12": {"best_tau": 0.1, "f1": 0.386, "precision": 0.55, "recall": 0.297, "shd": 35.0},
+     "17": {"best_tau": 0.1, "f1": 0.296, "precision": 0.471, "recall": 0.216, "shd": 38.0}
+    },
+    "SCIN masked vt=0.05": {
+     "4": {"best_tau": 0.15, "f1": 0.394, "precision": 0.448, "recall": 0.351, "shd": 40.0},
+     "8": {"best_tau": 0.1, "f1": 0.35, "precision": 0.326, "recall": 0.378, "shd": 52.0},
+     "12": {"best_tau": 0.2, "f1": 0.295, "precision": 0.375, "recall": 0.243, "shd": 43.0},
+     "17": {"best_tau": 0.1, "f1": 0.308, "precision": 0.293, "recall": 0.324, "shd": 54.0}
+    }
+   },
+   "n_parents_with_3plus_varying_envs": {"4": 18, "8": 18, "12": 18, "17": 18},
+   "time_s": 1654.9
+  },
+  "part2_chambers_10seed": {
+   "n_envs": 12, "n_nodes": 18, "n_gt_edges": 37, "n_seeds": 10,
+   "summary": {
+    "NOTEARS-pooled": {"best_tau": 0.05, "f1": 0.335, "f1_std": 0.003, "precision": 0.3, "precision_std": 0.004, "shd": 55.6},
+    "SCIN (ours)": {"best_tau": 0.1, "f1": 0.365, "f1_std": 0.025, "precision": 0.612, "precision_std": 0.046, "shd": 33.6}
+   },
+   "time_s": 1544.6
+  },
+  "part3_d_300_400": {
+   "rows": [
+    {"d": 300, "n_per_env": 2000, "precision": 0.9638989169675091, "recall": 0.89, "f1": 0.925476603119584, "shd": 43, "warm_s": 54.9, "scin_s": 111.9},
+    {"d": 400, "n_per_env": 2000, "precision": 0.967654986522911, "recall": 0.8975, "f1": 0.9312581063553826, "shd": 53, "warm_s": 91.8, "scin_s": 215.2}
+   ],
+   "time_s": 474.9
+  }
+ },
+ "finished": "2026-11-24 15:27:53"
+}
