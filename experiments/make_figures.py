@@ -222,6 +222,116 @@ def fig5_icp():
     plt.close(fig)
 
 
+def fig7_chambers_adjacency():
+    """Exp G: adjacency heatmaps — GT vs SCIN vs NOTEARS-pooled
+    (one representative seed-0 window at tau=0.1, var_tol=0.02)."""
+    import numpy as np
+    from matplotlib.colors import ListedColormap
+    d = jload("exp_g_matrices.json")
+    vars_ = d["config"]["vars"]
+    n = len(vars_)
+
+    def adj(elist):
+        A = np.zeros((n, n))
+        for it in elist:
+            A[it["i"], it["j"]] = 1.0
+        return A
+
+    A_gt = adj(d["adj_gt"])
+    A_sc = adj(d["adj_scin"])
+    A_pl = adj(d["adj_pool"])
+
+    # encoding: 0 nothing; 1 true positive (in GT and selected);
+    # 2 false addition (selected, not in GT); 3 miss (in GT, not selected)
+    def encode(A):
+        E = np.zeros((n, n))
+        E[(A_gt > 0) & (A > 0)] = 1.0
+        E[(A_gt == 0) & (A > 0)] = 2.0
+        E[(A_gt > 0) & (A == 0)] = 3.0
+        return E
+
+    encs = [("Ground truth", A_gt * 1.0), ("SCIN (ours)", encode(A_sc)),
+            ("NOTEARS-pooled", encode(A_pl))]
+    cmap = ListedColormap(["#f2f2f2", C_SCIN, C_ERM, "#e0a800"])
+    short = [v.replace("ir_", "ir").replace("vis_", "vs")
+             .replace("pol_", "po").replace("l_", "l") for v in vars_]
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.6))
+    for ax, (title, E) in zip(axes, encs):
+        ax.imshow(E, cmap=cmap, vmin=0, vmax=3, interpolation="none")
+        ax.set_xticks(range(n)); ax.set_yticks(range(n))
+        ax.set_xticklabels(short, rotation=90, fontsize=7)
+        ax.set_yticklabels(short, fontsize=7)
+        ax.set_title(title, fontsize=11)
+        tp = int((E == 1).sum()); fa = int((E == 2).sum())
+        ms = int((E == 3).sum())
+        if title != "Ground truth":
+            ax.set_xlabel(f"TP {tp} · false+ {fa} · missed {ms}", fontsize=9)
+    import matplotlib.patches as mpatches
+    handles = [mpatches.Patch(color=C_SCIN, label="true positive"),
+               mpatches.Patch(color=C_ERM, label="false addition"),
+               mpatches.Patch(color="#e0a800", label="missed (in GT)")]
+    axes[-1].legend(handles=handles, frameon=False, fontsize=8,
+                    loc="upper left", bbox_to_anchor=(1.02, 1.0))
+    fig.suptitle("Causal Chambers light tunnel: selected adjacency at "
+                 "tau=0.1 (GT 37 edges)", y=1.04)
+    fig.savefig(os.path.join(FIGS, "fig7_chambers_adjacency.png"))
+    plt.close(fig)
+
+
+def fig8_concept():
+    """Fig 1 concept schematic: environments -> shared+deltas ->
+    invariance selection -> invariant DAG -> OOD generalization."""
+    import matplotlib.patches as mpatches
+    from matplotlib.patches import FancyArrowPatch
+    fig, ax = plt.subplots(figsize=(12.4, 4.6))
+    ax.axis("off"); ax.set_xlim(0, 12.4); ax.set_ylim(0, 4.6)
+
+    def box(x, y, w, h, text, fc="#eef3fb", ec=C_SCIN, fs=9.5):
+        ax.add_patch(mpatches.FancyBboxPatch(
+            (x, y), w, h, boxstyle="round,pad=0.08", fc=fc, ec=ec, lw=1.4))
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center",
+                fontsize=fs)
+
+    def arrow(x1, y1, x2, y2, color="#444444"):
+        ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2),
+                     arrowstyle="-|>", mutation_scale=14, color=color,
+                     lw=1.3))
+
+    box(0.15, 2.6, 2.2, 1.5,
+        "Multiple\nenvironments\n$X^1,\\dots,X^E$", fs=11)
+    box(3.0, 2.6, 2.9, 1.5,
+        "Differentiable fit\n$W_e = W + \\Delta_e$ per env\n+ per-env acyclicity", fs=8.5)
+    box(3.0, 0.4, 2.9, 1.4,
+        "Equal-variance\ncriterion (orientation)", fc="#fdf3ef",
+        ec=C_ERM, fs=8.5)
+    box(6.6, 2.6, 2.7, 1.5,
+        "Invariance selection\n$\\mathrm{Var}_e(\\hat W_{e,ij}) < v$\n& mean $|\\hat W| > \\tau$", fs=8.5)
+    box(9.9, 2.6, 2.2, 1.5,
+        "Invariant DAG\n$\\to$ OOD-stable\nprediction", fc="#eef7ee",
+        ec=C_ORA, fs=9.5)
+    arrow(2.35, 3.35, 2.95, 3.35)
+    arrow(4.45, 2.55, 4.45, 1.85)
+    arrow(5.95, 3.35, 6.55, 3.35)
+    arrow(7.95, 2.55, 7.95, 1.85)
+    arrow(4.45, 1.1, 7.5, 2.55)
+    arrow(9.35, 3.35, 9.85, 3.35)
+
+    # moved-mechanism inset (bottom right)
+    ax.text(10.2, 1.7, "moved mechanism:", fontsize=8.5, style="italic")
+    for yy, lab, col in [(1.15, "env 1:  $x_s \\to y$,  γ=0.8",
+                          C_ERM),
+                         (0.75, "env 2:  $x_s \\to y$,  γ=0.0",
+                          C_ERM),
+                         (0.35, "$x_1 \\to y$,  γ=1.5 (all envs)",
+                          C_SCIN)]:
+        ax.text(10.2, yy, lab, fontsize=9, color=col)
+    ax.text(10.2, 0.02, "kept (invariant)", fontsize=8, color=C_SCIN)
+    fig.suptitle("SCIN: joint estimation separates invariant mechanisms "
+                 "from environment-moved ones", y=0.02, fontsize=11)
+    fig.savefig(os.path.join(FIGS, "fig8_concept.png"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     fig1_scaling()
     fig2_pnl()
@@ -235,6 +345,14 @@ if __name__ == "__main__":
         fig6_e_sens()
     except FileNotFoundError as e:
         print("fig6 skipped:", e)
+    try:
+        fig7_chambers_adjacency()
+    except FileNotFoundError as e:
+        print("fig7 skipped:", e)
+    try:
+        fig8_concept()
+    except FileNotFoundError as e:
+        print("fig8 skipped:", e)
     print("figures written to", FIGS)
     for f in sorted(os.listdir(FIGS)):
         print("  ", f)
