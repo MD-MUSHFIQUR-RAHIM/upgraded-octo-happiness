@@ -427,7 +427,7 @@ def _(RUN_PART3, SMOKE, mo):
 
 
 @app.cell
-def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
+def _(DEVICE, DTYPE, RUN_PART3, SMOKE, h_poly, np, torch):
     def run_part3():
         rng3_ = np.random.default_rng(0)
         # v2 design: 3 training environments (stronger heterogeneity signal)
@@ -475,7 +475,8 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
         enc_ = torch.nn.Sequential(torch.nn.Linear(6, 32), torch.nn.ReLU(),
                                    torch.nn.Linear(32, d_lat_)).to(DEVICE)
         lat_ = [torch.as_tensor(t[0], device=DEVICE) for t in tr3_]
-        y_dev_ = [torch.as_tensor(t[1], device=DEVICE) for t in tr3_]
+        y_dev_ = [torch.as_tensor(t[1], device=DEVICE, dtype=DTYPE)
+                  for t in tr3_]
         opt_enc_ = torch.optim.Adam(enc_.parameters(), lr=1e-3)
         Zpre_ = torch.vstack([torch.as_tensor(t[0], device=DEVICE)
                               for t in tr3_])
@@ -486,20 +487,23 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
             ((enc_(Zpre_).sum(1) - ypre_) ** 2).mean().backward()
             opt_enc_.step()
         dtot_ = d_lat_ + 1
-        mask3_ = 1.0 - torch.eye(dtot_, device=DEVICE)
+        mask3_ = 1.0 - torch.eye(dtot_, device=DEVICE, dtype=DTYPE)
         Ws3_np_ = None
         for phase_ in range(2 if SMOKE else 5):
             with torch.no_grad():
-                Zs_raw_ = [enc_(x) for x in lat_]
+                Zs_raw_ = [enc_(x).to(DTYPE) for x in lat_]
                 Zall_ = torch.vstack(Zs_raw_)
                 mu_, sdm_ = Zall_.mean(0), Zall_.std(0) + 1e-6
             Zs_ = [(z - mu_) / sdm_ for z in Zs_raw_]
             Zsy_ = [torch.cat([z, y.unsqueeze(1)], 1)
                     for z, y in zip(Zs_, y_dev_)]
-            sc23_ = torch.cat([torch.ones(dtot_ - 1, device=DEVICE),
+            sc23_ = torch.cat([torch.ones(dtot_ - 1, device=DEVICE,
+                                          dtype=DTYPE),
                                (y_dev_[0].var() + 1e-6).reshape(1)])
-            Wm_ = torch.zeros(dtot_, dtot_, device=DEVICE, requires_grad=True)
-            Dl_ = [torch.zeros(dtot_, dtot_, device=DEVICE, requires_grad=True)
+            Wm_ = torch.zeros(dtot_, dtot_, device=DEVICE, dtype=DTYPE,
+                              requires_grad=True)
+            Dl_ = [torch.zeros(dtot_, dtot_, device=DEVICE, dtype=DTYPE,
+                               requires_grad=True)
                    for _ in range(len(tr3_))]
             # v1 fix: L-BFGS inner solver (Adam fails to converge here — the
             # same failure mode found in the linear fitters).
@@ -517,7 +521,7 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
                                for e, Z in enumerate(Zsy_))
                     ridge_ = 0.1 * sum((D ** 2).sum() for D in Dl_)
                     l1_ = 0.1 * Wm_.abs().sum()
-                    ev_ = torch.zeros((), device=DEVICE)
+                    ev_ = torch.zeros((), device=DEVICE, dtype=DTYPE)
                     for e, Z in enumerate(Zsy_):
                         r_ = Z - Z @ Wse_[e]
                         logv_ = torch.log(r_.var(dim=0, unbiased=False) * sc23_
