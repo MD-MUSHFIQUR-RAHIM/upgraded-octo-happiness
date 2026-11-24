@@ -1,0 +1,191 @@
+{
+ "started": "2026-11-24 13:51:11",
+ "device": "cpu",
+ "smoke": false,
+ "parts": {
+  "part1_E_scaling": {
+   "n_seeds": 1,
+   "summary_by_E": {
+    "NOTEARS-env-intersection": {
+     "4": {
+      "best_tau": 0.02,
+      "f1": 0.328,
+      "precision": 0.367,
+      "recall": 0.297,
+      "shd": 45.0
+     },
+     "8": {
+      "best_tau": 0.02,
+      "f1": 0.247,
+      "precision": 0.25,
+      "recall": 0.243,
+      "shd": 55.0
+     },
+     "12": {
+      "best_tau": 0.02,
+      "f1": 0.295,
+      "precision": 0.375,
+      "recall": 0.243,
+      "shd": 43.0
+     },
+     "17": {
+      "best_tau": 0.02,
+      "f1": 0.258,
+      "precision": 0.32,
+      "recall": 0.216,
+      "shd": 46.0
+     }
+    },
+    "NOTEARS-pooled": {
+     "4": {
+      "best_tau": 0.1,
+      "f1": 0.333,
+      "precision": 0.298,
+      "recall": 0.378,
+      "shd": 56.0
+     },
+     "8": {
+      "best_tau": 0.02,
+      "f1": 0.33,
+      "precision": 0.278,
+      "recall": 0.405,
+      "shd": 61.0
+     },
+     "12": {
+      "best_tau": 0.1,
+      "f1": 0.333,
+      "precision": 0.317,
+      "recall": 0.351,
+      "shd": 52.0
+     },
+     "17": {
+      "best_tau": 0.15,
+      "f1": 0.267,
+      "precision": 0.226,
+      "recall": 0.324,
+      "shd": 66.0
+     }
+    },
+    "SCIN (ours, masked)": {
+     "4": {
+      "best_tau": 0.1,
+      "f1": 0.333,
+      "precision": 0.435,
+      "recall": 0.27,
+      "shd": 40.0
+     },
+     "8": {
+      "best_tau": 0.1,
+      "f1": 0.364,
+      "precision": 0.556,
+      "recall": 0.27,
+      "shd": 35.0
+     },
+     "12": {
+      "best_tau": 0.1,
+      "f1": 0.386,
+      "precision": 0.55,
+      "recall": 0.297,
+      "shd": 35.0
+     },
+     "17": {
+      "best_tau": 0.1,
+      "f1": 0.276,
+      "precision": 0.381,
+      "recall": 0.216,
+      "shd": 42.0
+     }
+    },
+    "SCIN masked vt=0.05": {
+     "4": {
+      "best_tau": 0.05,
+      "f1": 0.379,
+      "precision": 0.31,
+      "recall": 0.486,
+      "shd": 59.0
+     },
+     "8": {
+      "best_tau": 0.1,
+      "f1": 0.32,
+      "precision": 0.316,
+      "recall": 0.324,
+      "shd": 51.0
+     },
+     "12": {
+      "best_tau": 0.2,
+      "f1": 0.29,
+      "precision": 0.36,
+      "recall": 0.243,
+      "shd": 44.0
+     },
+     "17": {
+      "best_tau": 0.15,
+      "f1": 0.303,
+      "precision": 0.345,
+      "recall": 0.27,
+      "shd": 46.0
+     }
+    }
+   },
+   "n_parents_with_3plus_varying_envs": {
+    "4": 18,
+    "8": 18,
+    "12": 18,
+    "17": 18
+   },
+   "time_s": 132.9
+  },
+  "part2_chambers_10seed": {
+   "n_envs": 12,
+   "n_nodes": 18,
+   "n_gt_edges": 37,
+   "n_seeds": 1,
+   "summary": {
+    "NOTEARS-pooled": {
+     "best_tau": 0.1,
+     "f1": 0.333,
+     "f1_std": 0.0,
+     "precision": 0.317,
+     "precision_std": 0.0,
+     "shd": 52.0
+    },
+    "SCIN (ours)": {
+     "best_tau": 0.1,
+     "f1": 0.386,
+     "f1_std": 0.0,
+     "precision": 0.55,
+     "precision_std": 0.0,
+     "shd": 35.0
+    }
+   },
+   "time_s": 36.3
+  },
+  "part3_d_300_400": {
+   "rows": [
+    {
+     "d": 300,
+     "n_per_env": 2000,
+     "precision": 0.9638989169675091,
+     "recall": 0.89,
+     "f1": 0.925476603119584,
+     "shd": 43,
+     "warm_s": 56.2,
+     "scin_s": 115.4
+    },
+    {
+     "d": 400,
+     "n_per_env": 2000,
+     "precision": 0.9728997289972899,
+     "recall": 0.8975,
+     "f1": 0.9336801040312093,
+     "shd": 51,
+     "warm_s": 75.5,
+     "scin_s": 203.3
+    }
+   ],
+   "time_s": 450.7
+  }
+ },
+ "finished": "2026-11-24 14:01:31",
+ "note": "Full-config 1-seed CPU validation of colab_scin_max_cell.py (delivered SMOKE=False). d=25 reference row reproduces GPU run #1 exactly (F1 0.889, SHD 5). d=300/400 are the first results at this scale: F1 0.925/0.934, precision 0.97-1.0."
+}
