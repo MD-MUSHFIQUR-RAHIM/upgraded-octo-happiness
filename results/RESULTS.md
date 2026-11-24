@@ -231,3 +231,25 @@ prune anything — the gain may come from latent-space ridge fitting rather
 than invariance-based selection). Required next: 5-seed replication and
 selection-diagnostics (does coercing a sparser selection hurt or help?)
 before any claim goes in the paper.
+
+### Experiment E — CONFOUNDED OOD (spurious edge s->y INSIDE the target mechanism)
+
+Design: y = 1.5*x1 - x2 + gamma_e*s + eps (gamma: 0.8/0.0 train, 0.6/-1.0
+test), s = 1.2*x2 + 1.5*noise. The spurious variable is now INSIDE the
+mechanism with an environment-varying coefficient, so plain ancestor
+selection cannot exclude it — only the invariance criterion can.
+
+Result (5 seeds, n=1500/env):
+- SCIN selected {x0, x1, x2} (oracle-relevant set: s EXCLUDED) in 4/5
+  seeds; in one seed the borderline x2 was dropped (open limitation).
+- Test gamma=-1.0 (sign flip): ERM 1.339 ± 0.030 vs SCIN 1.063 ± 0.116
+  vs Oracle 1.005 ± 0.015 — SCIN == Oracle, ERM ~30% worse.
+- Test gamma=0.6 (mild): ERM slightly better (0.174 vs 0.285) — expected
+  bias-variance tradeoff: exploiting s pays off while its test coefficient
+  stays near the training average.
+
+Two bugs found and fixed while building this experiment (documented for
+reproducibility): (1) target leakage — y (index 6) passed as its own
+predictor; (2) np.hstack on (n,1) blocks interleaves the two environments'
+rows, silently destroying the X-y correspondence. exp_b-ood did NOT have
+this bug (it used vstack).

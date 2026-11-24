@@ -428,8 +428,8 @@ def _(RUN_PART3, SMOKE, mo):
 
 @app.cell
 def _(DEVICE, DTYPE, RUN_PART3, SMOKE, h_poly, np, torch):
-    def run_part3():
-        rng3_ = np.random.default_rng(0)
+    def run_seed3(seed3_):
+        rng3_ = np.random.default_rng(seed3_)
         # v2 design: 3 training environments (stronger heterogeneity signal)
         betas_tr_, betas_te_ = (2.0, 1.4, 0.8), (0.0, -2.0)
         n3_ = 800 if SMOKE else 4000
@@ -450,7 +450,7 @@ def _(DEVICE, DTYPE, RUN_PART3, SMOKE, h_poly, np, torch):
             return float(np.mean((y_ - np.asarray(yh_)) ** 2))
 
         # ---- ERM-MLP baseline
-        torch.manual_seed(0)
+        torch.manual_seed(seed3_)
         erm_ = torch.nn.Sequential(torch.nn.Linear(6, 64), torch.nn.ReLU(),
                                    torch.nn.Linear(64, 1)).to(DEVICE)
         opt_erm_ = torch.optim.Adam(erm_.parameters(), lr=1e-3)
@@ -464,14 +464,13 @@ def _(DEVICE, DTYPE, RUN_PART3, SMOKE, h_poly, np, torch):
         with torch.no_grad():
             for tag_, env_ in [("ood0", te3_[0]), ("ood_neg", te3_[1])]:
                 Xe_ = torch.as_tensor(env_[0], device=DEVICE)
-                erm_res_[tag_] = round(mse3(env_[1],
-                                            erm_(Xe_).squeeze().cpu().numpy()), 4)
+                erm_res_[tag_] = mse3(env_[1],
+                                      erm_(Xe_).squeeze().cpu().numpy())
 
-        # ---- Neural SCIN v2: encoder z=MLP(x) is PRETRAINED to predict y
-        # (v0 lesson: a random encoder destroys the invariance structure),
-        # then a linear SEM over [z, y] with per-env deltas + ev penalty;
-        # select latent ancestors of y; ridge.
-        torch.manual_seed(1)
+        # ---- Neural SCIN v2: encoder PRETRAINED to predict y (v0 lesson),
+        # then latent linear SEM with per-env deltas + ev penalty (fp64!),
+        # invariant-ancestor selection, ridge.
+        torch.manual_seed(seed3_ + 1)
         enc_ = torch.nn.Sequential(torch.nn.Linear(6, 32), torch.nn.ReLU(),
                                    torch.nn.Linear(32, d_lat_)).to(DEVICE)
         lat_ = [torch.as_tensor(t[0], device=DEVICE) for t in tr3_]
@@ -505,8 +504,6 @@ def _(DEVICE, DTYPE, RUN_PART3, SMOKE, h_poly, np, torch):
             Dl_ = [torch.zeros(dtot_, dtot_, device=DEVICE, dtype=DTYPE,
                                requires_grad=True)
                    for _ in range(len(tr3_))]
-            # v1 fix: L-BFGS inner solver (Adam fails to converge here — the
-            # same failure mode found in the linear fitters).
             opt3_ = torch.optim.LBFGS([Wm_] + Dl_,
                                       max_iter=40 if SMOKE else 150,
                                       tolerance_grad=1e-7,
@@ -558,6 +555,7 @@ def _(DEVICE, DTYPE, RUN_PART3, SMOKE, h_poly, np, torch):
                     anc_.add(i3_)
                     frontier3_.append(i3_)
         sel3_ = sorted(anc_)
+        scin_res_ = None
         if sel3_:
             with torch.no_grad():
                 Ztr_sel_ = [((enc_(x) - mu_) / sdm_)[:, sel3_]
@@ -575,13 +573,39 @@ def _(DEVICE, DTYPE, RUN_PART3, SMOKE, h_poly, np, torch):
                     Z3_ = ((((enc_(torch.as_tensor(env_[0], device=DEVICE))
                               - mu_) / sdm_))[:, sel3_])
                     yh3_ = Z3_.cpu().numpy() @ w_ + b_
-                scin_res_[tag_] = round(mse3(env_[1], yh3_), 4)
-        else:
-            scin_res_ = {"ood0": float("nan"), "ood_neg": float("nan"),
-                         "note": "no latents selected"}
-        return {"erm_ood_mse": erm_res_, "scin_v0_mse": scin_res_,
-                "version": "v2-pretrained-encoder-3env",
-                "n_latents_selected": len(sel3_), "d_latent": d_lat_}
+                scin_res_[tag_] = mse3(env_[1], yh3_)
+        return {"erm": erm_res_, "scin": scin_res_, "n_sel": len(sel3_)}
+
+    def run_part3():
+        seeds_ = range(1 if SMOKE else 5)
+        rows_ = [run_seed3(s) for s in seeds_]
+
+        def agg(getter):
+            vals_ = [getter(r_) for r_ in rows_ if getter(r_) is not None]
+            if not vals_:
+                return None, None, 0
+            mean_ = float(np.mean(vals_))
+            std_ = float(np.std(vals_))
+            return round(mean_, 4), round(std_, 4), len(vals_)
+
+        emo_, ems_, emn_ = agg(lambda r_: r_["erm"].get("ood0"))
+        emon_, ems2_, _ = agg(lambda r_: r_["erm"].get("ood_neg"))
+        sco_, scs_, scn_ = agg(lambda r_: (r_["scin"] or {}).get("ood0"))
+        scon_, scs2_, _ = agg(lambda r_: (r_["scin"] or {}).get("ood_neg"))
+        return {
+            "erm_ood_mse": {"ood0": emo_, "ood0_std": ems_,
+                            "ood_neg": emon_, "ood_neg_std": ems2_,
+                            "n_seeds": emn_},
+            "scin_v0_mse": {"ood0": sco_, "ood0_std": scs_,
+                            "ood_neg": scon_, "ood_neg_std": scs2_,
+                            "n_selected_mean":
+                                round(float(np.mean([r_["n_sel"]
+                                                     for r_ in rows_])), 1),
+                            "n_selected_max": int(max(r_["n_sel"]
+                                                      for r_ in rows_))},
+            "version": "v2-pretrained-encoder-3env-5seed",
+            "d_latent": 16,
+        }
 
     part3_res = run_part3() if RUN_PART3 else None
     return (part3_res,)
@@ -636,13 +660,22 @@ def _(mo, payload_):
             f"\n### Part 3 — neural SCIN ({p3_.get('version', '?')})\n")
         erm_ = p3_.get("erm_ood_mse", {})
         sc_ = p3_.get("scin_v0_mse", {})
-        lines_.append("| model | OOD0 MSE | OOD_neg MSE |")
-        lines_.append("|---|---|---|")
-        lines_.append(f"| ERM-MLP | {erm_.get('ood0')} | {erm_.get('ood_neg')} |")
-        lines_.append(f"| SCIN | {sc_.get('ood0')} | {sc_.get('ood_neg')} |")
+
+        def cell_(m_, s_):
+            return f"{m_}" if s_ is None else f"{m_} ± {s_}"
+
         lines_.append(
-            f"\nLatents selected: **{p3_.get('n_latents_selected')}** / "
-            f"{p3_.get('d_latent')}")
+            "| model | OOD0 MSE | OOD_neg MSE |\n|---|---|---|")
+        lines_.append(
+            f"| ERM-MLP | {cell_(erm_.get('ood0'), erm_.get('ood0_std'))} | "
+            f"{cell_(erm_.get('ood_neg'), erm_.get('ood_neg_std'))} |")
+        lines_.append(
+            f"| SCIN | {cell_(sc_.get('ood0'), sc_.get('ood0_std'))} | "
+            f"{cell_(sc_.get('ood_neg'), sc_.get('ood_neg_std'))} |")
+        if "n_selected_mean" in sc_:
+            lines_.append(
+                f"\nLatents selected (mean over seeds): "
+                f"**{sc_['n_selected_mean']}** / {p3_.get('d_latent')}")
     mo.md("\n".join(lines_))
     return ()
 
