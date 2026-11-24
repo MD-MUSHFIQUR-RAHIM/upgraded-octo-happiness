@@ -482,7 +482,7 @@ scripts with pinned seeds; raw JSONs are committed alongside.
 - [x] Introduction + Abstract prose done
 - [x] Results prose (2.1-2.6) first pass done
 - [x] Discussion + Methods prose first pass done
-- [ ] Cover letter (NMI) — pending
+- [x] Cover letter (NMI) first-pass draft done
 
 ---
 
