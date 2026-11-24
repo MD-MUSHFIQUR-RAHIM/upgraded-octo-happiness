@@ -1,0 +1,155 @@
+{
+  "config": {
+    "d": 10,
+    "n_edges": 10,
+    "n_envs": 4,
+    "n_per_env": 1000,
+    "n_perturbed": 3,
+    "alpha": 0.05,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "scin_hp": {
+      "lam1": 0.1,
+      "lam3": 0.1,
+      "lev": 1.0,
+      "tau": 0.2,
+      "vtol": 0.01
+    },
+    "note": "multi-env ICP; SCIN hp re-used from 2-env val"
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "method": "ICP (node-wise, F-test)",
+      "precision": 0.1111111111111111,
+      "recall": 0.42857142857142855,
+      "f1": 0.17647058823529413,
+      "shd": 28,
+      "mean_accepted_per_target": 235.8,
+      "fallback_targets": 10
+    },
+    {
+      "seed": 0,
+      "method": "SCIN (ours)",
+      "precision": 1.0,
+      "recall": 0.8571428571428571,
+      "f1": 0.923076923076923,
+      "shd": 1
+    },
+    {
+      "seed": 1,
+      "method": "ICP (node-wise, F-test)",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "shd": 32,
+      "mean_accepted_per_target": 260.6,
+      "fallback_targets": 8
+    },
+    {
+      "seed": 1,
+      "method": "SCIN (ours)",
+      "precision": 0.875,
+      "recall": 1.0,
+      "f1": 0.9333333333333333,
+      "shd": 1
+    },
+    {
+      "seed": 2,
+      "method": "ICP (node-wise, F-test)",
+      "precision": 0.125,
+      "recall": 0.42857142857142855,
+      "f1": 0.19354838709677416,
+      "shd": 25,
+      "mean_accepted_per_target": 258.2,
+      "fallback_targets": 8
+    },
+    {
+      "seed": 2,
+      "method": "SCIN (ours)",
+      "precision": 0.7777777777777778,
+      "recall": 1.0,
+      "f1": 0.8750000000000001,
+      "shd": 2
+    },
+    {
+      "seed": 3,
+      "method": "ICP (node-wise, F-test)",
+      "precision": 0.05555555555555555,
+      "recall": 0.14285714285714285,
+      "f1": 0.08,
+      "shd": 23,
+      "mean_accepted_per_target": 199.4,
+      "fallback_targets": 7
+    },
+    {
+      "seed": 3,
+      "method": "SCIN (ours)",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "shd": 0
+    },
+    {
+      "seed": 4,
+      "method": "ICP (node-wise, F-test)",
+      "precision": 0.08695652173913043,
+      "recall": 0.2857142857142857,
+      "f1": 0.13333333333333333,
+      "shd": 26,
+      "mean_accepted_per_target": 239.0,
+      "fallback_targets": 7
+    },
+    {
+      "seed": 4,
+      "method": "SCIN (ours)",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "shd": 0
+    }
+  ],
+  "summary": {
+    "ICP (node-wise, F-test)": {
+      "precision": [
+        0.07572463768115942,
+        0.04460365832235203
+      ],
+      "recall": [
+        0.2571428571428571,
+        0.16659862556700858
+      ],
+      "f1": [
+        0.11667046173308034,
+        0.07031449528027693
+      ],
+      "shd": [
+        26.8,
+        3.059411708155671
+      ]
+    },
+    "SCIN (ours)": {
+      "precision": [
+        0.9305555555555556,
+        0.09043789220055391
+      ],
+      "recall": [
+        0.9714285714285715,
+        0.05714285714285716
+      ],
+      "f1": [
+        0.9462820512820513,
+        0.048080170830472724
+      ],
+      "shd": [
+        0.8,
+        0.7483314773547883
+      ]
+    }
+  }
+}

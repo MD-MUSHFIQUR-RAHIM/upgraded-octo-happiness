@@ -97,6 +97,8 @@ for the paper's Related Work section.
 ## 4. Status
 
 - [x] Gap analysis drafted (this file)
-- [ ] Add ICP (`causal-learn`/own subset solver) baseline to Exp A at d=10
-      — the subset-search upper-bound comparison reviewers will ask for
+- [x] Add ICP (own node-wise subset solver, exact F-tests under A1) baseline
+      to Exp A at d=10 — 2 envs: F1 0.107±0.068; 4 envs: 0.117±0.070 vs SCIN
+      0.945 — subset-intersection collapses in this heterogeneity regime
+      (results/exp_f_icp_baseline_nenvs*.json, fig5_icp.png)
 - [ ] Related Work prose for the paper itself (after T1/T3 proofs are final)

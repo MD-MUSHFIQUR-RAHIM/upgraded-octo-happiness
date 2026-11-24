@@ -301,3 +301,40 @@ only as fallback if a file is missing).
 | `fig2_pnl.png` | PNL robustness: F1 vs nonlinear-mechanism strength 0→1.0 (0.930→0.856; peak 0.952 at 0.25) | Part 2 (GPU, identical to CPU) |
 | `fig3_ood_bars.png` | (a) Exp B OOD MSE: ERM / V-REx / SCIN vs oracle noise floor; (b) Exp E (confounded, spurious edge inside mechanism): ERM / SCIN / Oracle at sign-flip shift | Exp B, Exp E |
 | `fig4_ablation_violation.png` | (a) Component ablations (equal-variance criterion most load-bearing: F1 0.945→0.244 without it); (b) A1-violation robustness (noise-variance jitter) | Phase-2 ablations, A1-violation panel |
+| `fig5_icp.png` | ICP (node-wise subset search) vs SCIN at 2 and 4 envs — ICP F1 ≈ 0.11 vs SCIN 0.94 (Exp F) | Exp F ICP baseline |
+
+---
+
+## Experiment F — ICP baseline: subset-search has no power in this regime
+
+**Setup** (`experiments/exp_f_icp_baseline.py`): node-wise ICP
+(Peters, Bühlmann & Meinshausen 2016) — for every target node, test ALL
+candidate parent subsets (2^(d−1) = 512 per target), accept subsets whose
+per-env residual variances are homogeneous (exact pairwise F-tests under A1),
+estimate parents as the intersection of accepted subsets; empty intersections
+fall back to the max-p subset (standard ICP fallback, flagged). Same Exp A
+data (d=10, 10 edges, n=1000/env, 3 mechanisms perturbed), same seeds.
+SCIN runs on identical data at the exp_a-selected hyperparameters.
+
+| setting | ICP F1 | SCIN F1 | ICP SHD | SCIN SHD |
+|---|---|---|---|---|
+| 2 envs | 0.107 ± 0.068 | **0.945 ± 0.028** | 28.8 | 0.8 |
+| 4 envs | 0.117 ± 0.070 | **0.946 ± 0.048** | 26.8 | 0.8 |
+
+- ICP's subset-intersection collapses (empty in 7–10 of 10 targets per seed;
+  ~350/512 subsets accepted per target) — the mechanism heterogeneity budget
+  (3/10 perturbed) is too weak for residual-distribution testing to reject
+  irrelevant supersets. Doubling to 4 environments does not fix it.
+- SCIN never uses subset search: it solves one differentiable problem over
+  per-env deltas + equal-variance criterion and needs only 2 environments.
+  
+**Interpretation (goes in the paper):** invariance *testing* (ICP-style
+hypothesis tests) and invariance *estimation* (SCIN's joint continuous
+optimization) fail in opposite regimes — ICP needs strong mechanism
+heterogeneity and few candidate sets; SCIN needs identifiable orientation
+(A1) and tolerates weak heterogeneity. This contrast is a genuine
+contribution framing: the two families are complementary, not competing.
+
+Runtime: ICP ≈ 20 s/target-set (CPU, d=10); SCIN ≈ 2 s (CPU).
+Caveat: ICP numbers at d=10 only; ICP cost explodes exponentially, so this
+regime is exactly where full ICP is practical, making the loss more striking.

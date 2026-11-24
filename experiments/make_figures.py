@@ -159,11 +159,46 @@ def fig4_ablation_violation():
     plt.close(fig)
 
 
+def fig5_icp():
+    """ICP (node-wise subset search) vs SCIN at 2 and 4 environments."""
+    data = {}
+    for nv in (2, 4):
+        s = jload(f"exp_f_icp_baseline_nenvs{nv}.json")["summary"]
+        data[nv] = {
+            "icp": [s["ICP (node-wise, F-test)"]["f1"],
+                    s["ICP (node-wise, F-test)"]["shd"]],
+            "scin": [s["SCIN (ours)"]["f1"], s["SCIN (ours)"]["shd"]]}
+    envs = sorted(data)
+    fig, ax = plt.subplots(figsize=(4.6, 3.2))
+    w = 0.35
+    for off, key, lab, col in ((-w / 2, "icp", "ICP (node-wise)", C_ERM),
+                               (w / 2, "scin", "SCIN (ours)", C_SCIN)):
+        means = [data[nv][key][0][0] for nv in envs]
+        stds = [data[nv][key][0][1] for nv in envs]
+        bars = ax.bar([x + off for x in range(len(envs))], means,
+                      yerr=stds, width=w, color=col, label=lab, capsize=4)
+        for b, m, s_ in zip(bars, means, stds):
+            ax.annotate(f"{m:.2f}", (b.get_x() + w / 2, m + s_ + 0.02),
+                        ha="center", fontsize=9)
+    ax.set_xticks(range(len(envs)))
+    ax.set_xticklabels([f"{e} envs" for e in envs])
+    ax.set_ylabel("invariant-subgraph F1")
+    ax.set_ylim(0, 1.12)
+    ax.set_title("ICP subset search vs SCIN (Exp F)")
+    ax.legend(frameon=False, loc="upper left", fontsize=9)
+    fig.savefig(os.path.join(FIGS, "fig5_icp.png"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     fig1_scaling()
     fig2_pnl()
     fig3_ood_bars()
     fig4_ablation_violation()
+    try:
+        fig5_icp()
+    except FileNotFoundError as e:
+        print("fig5 skipped:", e)
     print("figures written to", FIGS)
     for f in sorted(os.listdir(FIGS)):
         print("  ", f)
