@@ -289,13 +289,246 @@ var_tol = 0.08).
 
 ---
 
-## Writing-status checklist
+## Abstract — finished draft (~190 words)
+
+Models trained on pooled data from multiple environments entangle two
+kinds of statistical regularities: causal mechanisms that remain fixed
+across environments, and environment-dependent mechanisms that do not.
+Under distribution shift only the former are safe to rely on, yet
+standard practice requires choosing between pooled fitting, which
+cannot in principle separate them, and invariance testing, which we
+show has no power in regimes of scarce, weak mechanism heterogeneity.
+Here we introduce the Sparse Causal Intervention Network (SCIN), a
+differentiable estimator that jointly fits a shared mechanism matrix
+and per-environment displacements under per-environment acyclicity and
+an equal-noise-variance orientation criterion, then retains exactly
+those edges whose coefficients are invariant across environments. We
+prove identifiability of the invariant mechanism set under quantitative
+heterogeneity, a constructive impossibility result for any pooled
+decision rule, and an exact out-of-distribution decomposition
+identifying which selection errors are harmful. Empirically, SCIN
+reaches the oracle's out-of-distribution error under strong spurious
+shift (10× lower than ERM), scales to d = 200 with flat runtime and
+precision ≈ 1, and achieves 2.3× the precision of pooled DAG learning
+on a physical system with validated causal ground truth. Both negative
+results are reported and analysed.
+
+---
+
+## Results 2.2 prose (first pass)
+
+Does the advantage survive in higher dimensions, where the number of
+candidate edges grows quadratically? We ran the same protocol on
+Erdős–Rényi DAGs at d = 25, 50, 100 and 200 (n = 2000 per environment,
+fp64, RTX PRO 6000 Blackwell GPU). SCIN maintains directed F1 of
+0.889 / 0.928 / 0.905 / 0.958 across these sizes with precision
+0.956–1.00 and SHD 5–18 — no high-dimensional collapse up to d = 200
+(Fig 2a). Runtime grows mildly (15 s → 24 s per fit for the SCIN stage,
+including the pooled warm-start), because the objective is a single
+matrix-valued optimization rather than the exponential subset search
+that defeats ICP. Sample complexity is favourable: at d = 10 F1 is
+flat from n = 250 per environment (Fig 2b), consistent with
+Theorem 1's log d scaling; recall, not precision, carries the residual
+weak-edge loss, exactly the undecidable band ([τ − Cλ₁, τ + Cλ₁])
+predicted by the case analysis.
+
+## Results 2.4 prose (first pass)
+
+The canonical invariance procedure, Invariant Causal Prediction,
+proceeds by hypothesis testing: for every candidate parent set, test
+whether residual distributions are homogeneous across environments,
+then intersect surviving sets. Applied to the same Exp A data — the
+regime most favourable to it, since d = 10 makes its 2^(d−1) subset
+enumeration feasible — node-wise ICP with exact pairwise F-tests
+achieves F1 0.107 ± 0.068 (2 environments) and 0.117 ± 0.070
+(4 environments), against SCIN's 0.945 / 0.946 (Fig 5). The failure is
+diagnostic: with only 3 of 10 mechanisms moved, ~350 of 512 candidate
+subsets pass the residual-homogeneity test per target, intersections
+come up empty in 7–10 of 10 targets, and the max-p fallback fills in
+noise. Invariance testing requires strong, structured heterogeneity to
+have power; SCIN's invariance *estimation* requires only a positive
+margin γ − τ − Cλ₁. The two families are complementary rather than
+competing, and the crossover is a property of the heterogeneity
+budget, not of implementation quality.
+
+## Results 2.5 prose (first pass)
+
+Synthetic victories are cheap; we therefore evaluated SCIN on the
+Causal Chambers light tunnel, a tabletop physical system with a
+clinically validated ground-truth causal graph (Gamella et al. 2025).
+We used 12 real interventions (reference, RGB LEDs, six lamps, two
+polarizers) as environments over an 18-node observable subgraph with
+37 ground-truth edges (n = 500 per environment). SCIN attains directed
+F1 0.415 with **precision 0.688** (5 seeds, GPU), versus 0.345 with
+precision 0.300 for pooled NOTEARS, and half the structural Hamming
+distance (31 vs 57) — Fig 7 shows the decisive picture: SCIN's 14
+selected edges are mostly physically real, while the pooled fit's 46
+are majority fabricated. Two properties matter for scientific use:
+first, SCIN's best threshold in the sweep is its a-priori default
+(τ = 0.1, var_tol = 0.02) — hyperparameters selected on synthetic
+data transfer to the physical system with no retuning; second, what
+it misses is explicable and bounded (unmeasured diode-internal
+parents, cos²-polarizer transmission that is only locally linear,
+small n). Conservative, high-precision partial recovery is the safe
+operating mode for experiment design: each of SCIN's selected edges is
+a testable hypothesis, whereas a 0.28-precision dense graph is not
+actionable.
+
+## Results 2.6 prose (first pass)
+
+We report three boundary results with the same rigour as the wins.
+(i) The full 38-node chamber graph with all 33 interventions defeats
+SCIN (F1 0.161 vs pooled 0.383) — but the pooled "win" is structural
+overfitting: 113 estimated edges against 57 ground-truth edges at
+precision 0.28. The true failure is upstream of selection: parents
+varying in 1 of 33 environments have unidentifiable coefficients,
+sin/cos mechanisms are not locally linear, and the light basis is
+multicollinear — precisely the regime T3′ excludes. (ii) Three design
+generations of a neural SCIN (random encoder; ERM-pretrained encoder;
+end-to-end joint training with augmented Lagrangians) failed to
+reliably beat an ERM-MLP under spurious shift across 5-seed GPU
+replications (best: OOD 0.436 ± 0.054 vs 0.383 ± 0.019). The lesson
+is that a free encoder entangles the spurious direction with causal
+latents, so the invariance statistic in latent space is fragile;
+invariance-aware encoder training remains open. (iii) Under mild
+mechanism nonlinearity (post-nonlinear distortions), the linear
+estimator degrades gracefully (F1 0.930 → 0.856 as distortion rises
+to maximal, with the reported improvement at small distortion 0.952),
+and under A1 violation the degradation is smooth, with SCIN degrading
+more slowly than pooled NOTEARS (Fig 4b).
+
+## Discussion — first-pass prose
+
+**Invariance belongs on coefficients, not on risks.** IRM-family
+methods impose invariance on the risk functional; our Exp B shows why
+that is too coarse — a spurious feature that lowers risk in every
+training environment produces no risk variance to penalize, while the
+mechanism y ← s still moves (coefficient 0.8 → 0.0). SCIN applies the
+invariance statistic directly to mechanism coefficients, where the
+move is visible. The contrast — V-REx ≈ ERM vs SCIN = oracle — is the
+paper's sharpest empirical lesson.
+
+**Testing versus estimation.** ICP-style hypothesis tests need enough
+mechanism moves to reject supersets; SCIN's continuous joint fit needs
+only a positive margin between the heterogeneity gap and the noise
+band. ICP collapses exactly where SCIN operates, and SCIN's
+identifiability assumptions (A1, orientation) are conditions that ICP
+does not require — the regimes are complementary, and stating the
+crossover is a contribution in itself.
+
+**Overfit-structure accounting.** Pooled DAG learning "won" the full
+chamber graph while estimating 200% excess edges and 0.28 precision.
+We recommend reporting directed-F1 together with SHD accounting and
+precision at matched selection budget — F1 alone rewards dense
+overfitting at test-time-relevant thresholds.
+
+**Limitations.** (1) Linear mechanisms: the theory is linear; PNL
+robustness is empirical. (2) A1 equal-variance identifiability:
+an assumption, degrading gracefully; A3 (invariance ⇒ relevance) is
+an assumption, not a theorem — our sensitivity grid maps where it
+holds. (3) Theorem 1 carries the standard solver-genie assumption
+recentred on NOTEARS practice. (4) The neural instantiation is an
+open, documented failure; we claim nothing beyond the linear setting.
+
+**Outlook.** Invariance-aware representation learning (constraining
+encoders to preserve the coefficient-level invariance statistic),
+partial-observability extensions for rarely-varying parents
+(masked statistics are a first step, insufficient alone), and
+continuous orientation criteria robust to PNL distortions are the
+direct continuations.
+
+## Methods — first-pass prose (condensed; full detail in supplementary)
+
+**SCIN objective.** For E environments, SCIN minimizes over
+W, {Δ_e}: L = Σ_e (2n_e)⁻¹‖X^e − X^e(W + Δ_e)‖²_F + λ₁‖W‖₁ +
+λ₃Σ‖Δ_e‖²_F + λ_ev Σ_j Var_e[log σ̂^{e2}_j] subject to h(W + Δ_e) = 0
+per environment, with h(M) = tr[(I + M∘M/d)^d] − d (a polynomial
+acyclicity surrogate; tr expm overflows as ρ grows). Optimization is
+an augmented Lagrangian with an L-BFGS strong-Wolfe inner solver in
+fp64 — both choices are load-bearing: an Adam inner solver fails to
+converge (F1 → 0) and fp32 overflows inside the line search. Default
+hyperparameters: λ₁ = 0.1, λ₃ = 0.1, λ_ev = 1.0, τ = 0.1, v = 0.02
+(selected on synthetic validation seeds; transferred unchanged to the
+chambers). Selection statistic: an edge (i,j) is kept iff
+Var_e(Ŵ_{e,ij}) ≤ v and mean_e |Ŵ_{e,ij}| ≥ τ, evaluated in raw
+(standardization-reversed) units — evaluating the equal-variance
+criterion on standardized data silently penalizes the truth. A masked
+variant computes the statistic per parent over the environments in
+which that parent varies (per-env std > 0.1, ≥ 3 environments).
+
+**Baselines.** NOTEARS-pooled (continuous DAG learning on the pooled
+sample, equal-variance-regularized), NOTEARS-per-env with edge-set
+intersection, V-REx (risk-variance penalized ERM), correlation
+thresholding, node-wise ICP with exact subset enumeration and pairwise
+F-tests under A1, and an Oracle fit on the true parents. All baselines
+receive the same τ-sweep as SCIN and are reported at their best τ.
+
+**Protocols and statistics.** Synthetic: Erdős–Rényi DAGs; each
+experiment uses ≥ 3 seeds (Exp A/B: 5–10) with hyperparameters tuned
+on held-out validation seeds and test seeds never consulted.
+Physical: Causal Chambers `lt_interventions_standard_v1`, 12
+interventions; per-seed random row subsampling after a 60-row settling
+drop; GPU runs (RTX PRO 6000 Blackwell 96 GB; Colab replication)
+execute identical fp64 code as the CPU results. All metrics are mean
+± sd over seeds, with paired comparisons and effect sizes (Exp B
+headline: Cohen's d ≈ 22). Every experiment regenerates from committed
+scripts with pinned seeds; raw JSONs are committed alongside.
+
 
 - [x] Theorems T1/T2/T3 full proofs (THEORY.md v2.0)
 - [x] All experiments committed with raw JSONs + figures
 - [x] Related-work gap analysis (RELATED_WORK.md)
 - [x] Fig 1 schematic (fig8_concept.png) + Fig 7 adjacency (fig7_chambers_adjacency.png)
-- [~] Introduction prose first pass done; abstract pending
-- [~] Results 2.1 and 2.3 first pass done
-- [ ] Methods prose
-- [ ] Cover letter (NMI)
+- [x] Introduction + Abstract prose done
+- [x] Results prose (2.1-2.6) first pass done
+- [x] Discussion + Methods prose first pass done
+- [ ] Cover letter (NMI) — pending
+
+---
+
+## Cover letter (NMI) — first-pass draft (non-formatted)
+
+Nature Machine Intelligence editors,
+
+Statistical models routinely fail when deployed on distributions that
+differ from their training data, and the field's leading remedies —
+invariance-based causal discovery and risk-level invariance penalties —
+either lack statistical power in realistically sparse heterogeneity
+regimes or impose invariance on the wrong object. We submit "Sparse
+Causal Intervention Networks: Learning Invariant Mechanisms from
+Multiple Environments for Distribution-Shift Generalization", which
+addresses this gap with an estimator, a theory, and a falsification
+suite spanning synthetic and physical systems.
+
+Three points of novelty: (1) SCIN estimates *which mechanisms* are
+invariant rather than which predictors are, via one differentiable
+objective (shared mechanisms + per-environment displacements,
+per-environment acyclicity, and an equal-noise-variance orientation
+criterion borrowed from linear-Gaussian identifiability and repurposed
+as a regularizer); (2) we prove a constructive impossibility result
+for any pooled decision rule (Theorem 2), identifiability of the
+invariant mechanism set under quantitative heterogeneity (Theorem 1),
+and an exact OOD decomposition that predicts which selection errors
+are harmful — a prediction our sensitivity grid confirms quantitatively
+(Theorem 3/Fig 6); (3) the empirical evaluation includes a physical
+system with a validated causal graph (Causal Chambers light tunnel,
+Gamella et al. 2025), where SCIN achieves 2.3× the precision of pooled
+continuous DAG learning with *default* hyperparameters transferred from
+synthetic data.
+
+We emphasize that the paper reports its negative results with the same
+rigour: three design generations of neural SCIN and the full 38-node
+chamber graph are analysed as boundary results, each tied to the
+theory's stated non-coverage conditions. All code, raw result files,
+per-seed statistics and generated figures are archived and licensed
+for reuse.
+
+We confirm this manuscript is not under consideration elsewhere. All
+authors have approved submission. Data for the physical system are
+publicly available (Causal Chambers, Gamella et al. 2025); all
+synthetic data are generated by committed scripts with pinned seeds.
+
+Suggested reviewers (domain, not named individuals): causal discovery
+(multi-environment identifiability); invariant-risk/representation
+learning (OOD generalization); probabilistic robotics or physical
+testbed methodology (for the Causal Chambers analysis).
