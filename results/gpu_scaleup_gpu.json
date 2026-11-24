@@ -1,0 +1,22 @@
+{
+  "started": "2026-11-24 08:01:47",
+  "device": "cuda",
+  "linear_scaleup": [
+    {"d": 25, "n_per_env": 2000, "device": "cuda", "warmstart_s": 16.2, "scin_s": 17.1, "precision": 1.0, "recall": 0.8, "f1": 0.889, "shd": 5},
+    {"d": 50, "n_per_env": 2000, "device": "cuda", "warmstart_s": 15.6, "scin_s": 17.2, "precision": 0.957, "recall": 0.9, "f1": 0.928, "shd": 7},
+    {"d": 100, "n_per_env": 2000, "device": "cuda", "warmstart_s": 16.5, "scin_s": 19.7, "precision": 0.956, "recall": 0.86, "f1": 0.905, "shd": 18},
+    {"d": 200, "n_per_env": 2000, "device": "cuda", "warmstart_s": 19.7, "scin_s": 23.9, "precision": 1.0, "recall": 0.92, "f1": 0.958, "shd": 16}
+  ],
+  "pnl": [
+    {"strength": 0.0, "f1_mean": 0.93, "f1_std": 0.005},
+    {"strength": 0.25, "f1_mean": 0.952, "f1_std": 0.034},
+    {"strength": 0.5, "f1_mean": 0.922, "f1_std": 0.068},
+    {"strength": 1.0, "f1_mean": 0.856, "f1_std": 0.064}
+  ],
+  "neural_v0": {
+    "erm_ood_mse": {"ood0": 0.3831, "ood0_std": 0.0191, "ood_neg": 1.4873, "ood_neg_std": 0.1553, "n_seeds": 5},
+    "scin_v0_mse": {"ood0": 0.4362, "ood0_std": 0.0541, "ood_neg": 1.6128, "ood_neg_std": 0.3752, "n_selected_mean": 11.8, "n_selected_max": 16},
+    "version": "v2-pretrained-encoder-3env-5seed",
+    "d_latent": 16
+  }
+}
