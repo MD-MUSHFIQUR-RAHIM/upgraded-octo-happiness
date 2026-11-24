@@ -30,14 +30,21 @@ def _():
 def _(mo):
     mo.md(
         """
-        # SCIN — Phase-3 GPU Experiments
-        Sparse Causal Intervention Networks:
+        # SCIN — Phase-3 GPU Experiments 🧠
+        **Sparse Causal Intervention Networks** — self-contained notebook.
 
         - **Part 1** — linear scale-up, d ∈ {25, 50, 100, 200}
         - **Part 2** — post-nonlinear (PNL) robustness
-        - **Part 3** — neural SCIN v0 (MLP encoder + latent SEM) vs ERM-MLP
+        - **Part 3** — neural SCIN v2 (pretrained encoder + latent SEM) vs ERM-MLP
 
-        Set `SMOKE = False` in the config cell for the real run.
+        ## How to run (molab / Colab)
+        1. **GPU runtime সিলেক্ট করুন** (RTX PRO 6000 / A100 — anything CUDA).
+        2. Config cell এ `SMOKE = False` রাখা আছে — **শুধু Run all চাপুন।**
+           (Quick pipeline test চাইলে `SMOKE = True` — ~৩ মিনিট)
+        3. শেষ cell এ **“Download gpu_scaleup.json”** বাটন আসবে — ফলাফল ফাইল।
+
+        > Technical notes: fp64 (REQUIRED — fp32 overflows in L-BFGS line
+        > search), L-BFGS inner solver, per-environment acyclicity.
         """
     )
     return ()
@@ -66,11 +73,12 @@ def _(DEVICE, DTYPE, mo):
 
 @app.cell
 def _():
-    # ---------------- configuration: edit these ----------------
-    SMOKE = True      # True = ~3-min pipeline test; False = real run
+    # ---------------- configuration ----------------
+    # False = REAL run (GPU, ~30-60 min). True = 3-min pipeline test.
+    SMOKE = False
     RUN_PART1 = True  # linear scale-up
     RUN_PART2 = True  # PNL robustness
-    RUN_PART3 = True  # neural SCIN v0
+    RUN_PART3 = True  # neural SCIN v2
     HP = {"lambda1": 0.1, "lambda3": 0.1, "lambda_ev": 1.0,
           "tau": 0.2, "var_tol": 0.01}
     return HP, RUN_PART1, RUN_PART2, RUN_PART3, SMOKE
