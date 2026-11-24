@@ -94,6 +94,10 @@ for the paper's Related Work section.
    V-REx, and ERM. (V-REx and NOTEARS-pooled are done; ICP subset-search at
    d=10 is feasible on CPU and is the one remaining head-to-head to add.)
 
+- [x] Real-data validation: Causal Chambers light tunnel (lt/standard,
+      Gamella et al. 2025) with physical ground truth — SCIN precision 0.79
+      vs pooled NOTEARS 0.26, F1 0.430 vs 0.300, SHD 29 vs 61 (Exp G)
+
 ## 4. Status
 
 - [x] Gap analysis drafted (this file)

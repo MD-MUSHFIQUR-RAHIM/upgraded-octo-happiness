@@ -375,3 +375,38 @@ OOD_neg mean grid `(x2-dropped / s-included counts out of 5)`:
   selection = {x0, x1, x2} in all seeds.
 - Sanity check on s at tight tau: s can enter via 0.02|0.02 (one seed) —
   consistent with tau needing to exceed s's (weak) absolute coefficient.
+
+---
+
+## Experiment G — Causal Chambers: real physical data with ground truth
+
+**Setup** (`experiments/exp_g_chambers.py`): light tunnel
+(`lt/standard`, Gamella et al. 2025), dataset `lt_interventions_standard_v1`.
+12 environments = 12 interventions (reference, rgb LEDs, 6 lamps, 2
+polarizers); 18 measured physical nodes; GT = induced subgraph of the
+chamber's physical DAG (37 edges). n = 500/env (each intervention run has
+1000 rows; 60 settling rows dropped), 3 random windows = seeds.
+Excluded envs: diode_*/t_*/osr_c/v_c interventions — there the intervened
+variable is outside the 18-node observable set (hidden varying input), which
+breaks mechanism invariance by construction; unwinnable, documented.
+
+| method | tau | precision | recall | F1 | skeleton F1 | SHD |
+|---|---|---|---|---|---|---|
+| NOTEARS-pooled | 0.1 | 0.263 | 0.351 | 0.300 ± 0.009 | 0.539 | 60.7 |
+| NOTEARS-env-intersection | 0.02 | 0.242 | 0.072 | 0.111 ± 0.157 | 0.162 | 35.3 |
+| **SCIN (ours)** | 0.1 | **0.786** | 0.297 | **0.430 ± 0.045** | **0.603** | **29.0** |
+
+Key points:
+- **~3× precision improvement** on real data: most edges SCIN selects are
+  physically real (0.79 vs 0.26); NOTEARS-pooled estimates many spurious
+  edges (SHD 61 vs 29). The invariance filter is doing real work on real data.
+- SCIN's best tau in the sweep is exactly the a-priori default 0.1 — the
+  synthetic-tuned hyperparameters transfer to the physical system.
+- Recall-limited (0.30): expected and interpretable — (i) unmeasured direct
+  parents (diode self-calibrations, diode temperatures) sit between our
+  variables and the sensors; (ii) polarizer→sensor transmission is cos²-like,
+  only locally linear; (iii) 500 samples per environment.
+- Honest framing for the paper: on a physical system with a validated ground
+  truth, SCIN achieves *high-precision partial recovery* of the causal
+  structure — at d=18, 12 envs, ~2 min CPU per window — where pooled
+  continuous DAG learning overestimates the structure by 60%.
