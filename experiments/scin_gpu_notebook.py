@@ -596,10 +596,55 @@ def _(DEVICE, JSON_PATH, RESULTS, json, mo, np, part1_rows, part2_rows,
             RESULTS[key_] = val_
     RESULTS["device"] = str(DEVICE)
     payload_ = {k: v for k, v in RESULTS.items() if v is not None}
-    mo.md("Saved `gpu_scaleup.json` — download it and share it back.")
+    mo.md(
+        """
+        ## ✅ Run finished
+
+        **Download `gpu_scaleup.json` below and share it back for analysis.**
+        """
+    )
     mo.download(data=json.dumps(payload_, indent=2, default=str),
                 filename="gpu_scaleup.json", label="Download gpu_scaleup.json")
     return (payload_,)
+
+
+@app.cell
+def _(mo, payload_):
+    # ---- human-readable summary of the run ----
+    lines_ = ["## 📊 Summary", f"**Device:** `{payload_.get('device', '?')}`"]
+    p1_ = payload_.get("linear_scaleup")
+    if p1_:
+        lines_.append("\n### Part 1 — linear scale-up\n")
+        lines_.append("| d | n/env | precision | recall | F1 | SHD | SCIN time |")
+        lines_.append("|---|---|---|---|---|---|---|")
+        for r_ in p1_:
+            lines_.append(
+                f"| {r_['d']} | {r_['n_per_env']} | {r_['precision']} | "
+                f"{r_['recall']} | **{r_['f1']}** | {r_['shd']} | "
+                f"{r_['scin_s']}s |")
+    p2_ = payload_.get("pnl")
+    if p2_:
+        lines_.append("\n### Part 2 — PNL robustness\n")
+        lines_.append("| strength | F1 mean | F1 std |")
+        lines_.append("|---|---|---|")
+        for r_ in p2_:
+            lines_.append(
+                f"| {r_['strength']} | {r_['f1_mean']} | {r_['f1_std']} |")
+    p3_ = payload_.get("neural_v0")
+    if p3_:
+        lines_.append(
+            f"\n### Part 3 — neural SCIN ({p3_.get('version', '?')})\n")
+        erm_ = p3_.get("erm_ood_mse", {})
+        sc_ = p3_.get("scin_v0_mse", {})
+        lines_.append("| model | OOD0 MSE | OOD_neg MSE |")
+        lines_.append("|---|---|---|")
+        lines_.append(f"| ERM-MLP | {erm_.get('ood0')} | {erm_.get('ood_neg')} |")
+        lines_.append(f"| SCIN | {sc_.get('ood0')} | {sc_.get('ood_neg')} |")
+        lines_.append(
+            f"\nLatents selected: **{p3_.get('n_latents_selected')}** / "
+            f"{p3_.get('d_latent')}")
+    mo.md("\n".join(lines_))
+    return ()
 
 
 if __name__ == "__main__":
