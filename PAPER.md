@@ -475,6 +475,33 @@ headline: Cohen's d ≈ 22). Every experiment regenerates from committed
 scripts with pinned seeds; raw JSONs are committed alongside.
 
 
+## Broad significance positioning (anti-silo strategy, for Intro + Discussion)
+
+**Who outside ML cares and why:**
+- Clinical / biomedicine: multi-center studies are exactly multi-environment
+  data; selecting which biomarker-target relationships are mechanism-level
+  (invariant) vs site-specific (moved) is this paper's question in new
+  clothes — precision of the selected mechanism set is what makes edge
+  lists actionable for follow-up experiments.
+- Experimental science (any field): a selected invariant mechanism is a
+  *testable hypothesis* with quantified trustworthiness (precision 0.69 on
+  a physical system); a dense 0.28-precision pooled graph is not. Reporting
+  practice recommendations (SHD accounting, precision-at-budget) transfer.
+- The testing-vs-estimation dichotomy (ICP vs SCIN) is a general
+  methodological claim about invariance-based inference, not specific to
+  one estimator.
+
+**Where we honestly do NOT go (stated, not hidden):** no domain application
+(genomics/simulated clinical data) is included; NMI scope is methodology +
+physical validation. Reaching Nature proper would require a domain
+application — flagged as the concrete follow-up path, not denied.
+
+**Neural negative reframed:** the neural SCIN negative result turns a
+broad community assumption ("deep nets will just learn invariance") into
+an open scientific problem — this connects to the representation-learning
+audience far beyond the causal-discovery silo.
+
+## Writing-status checklist
 - [x] Theorems T1/T2/T3 full proofs (THEORY.md v2.0)
 - [x] All experiments committed with raw JSONs + figures
 - [x] Related-work gap analysis (RELATED_WORK.md)
