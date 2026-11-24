@@ -422,7 +422,8 @@ def _(RUN_PART3, SMOKE, mo):
 def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
     def run_part3():
         rng3_ = np.random.default_rng(0)
-        betas_tr_, betas_te_ = (2.0, 1.0), (0.0, -2.0)
+        # v2 design: 3 training environments (stronger heterogeneity signal)
+        betas_tr_, betas_te_ = (2.0, 1.4, 0.8), (0.0, -2.0)
         n3_ = 800 if SMOKE else 4000
         d_lat_ = 16
 
@@ -458,13 +459,24 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
                 erm_res_[tag_] = round(mse3(env_[1],
                                             erm_(Xe_).squeeze().cpu().numpy()), 4)
 
-        # ---- Neural SCIN v0: encoder z=MLP(x); linear SEM over [z, y] with
-        # per-env deltas + ev penalty; select latent ancestors of y; ridge.
+        # ---- Neural SCIN v2: encoder z=MLP(x) is PRETRAINED to predict y
+        # (v0 lesson: a random encoder destroys the invariance structure),
+        # then a linear SEM over [z, y] with per-env deltas + ev penalty;
+        # select latent ancestors of y; ridge.
         torch.manual_seed(1)
         enc_ = torch.nn.Sequential(torch.nn.Linear(6, 32), torch.nn.ReLU(),
                                    torch.nn.Linear(32, d_lat_)).to(DEVICE)
         lat_ = [torch.as_tensor(t[0], device=DEVICE) for t in tr3_]
         y_dev_ = [torch.as_tensor(t[1], device=DEVICE) for t in tr3_]
+        opt_enc_ = torch.optim.Adam(enc_.parameters(), lr=1e-3)
+        Zpre_ = torch.vstack([torch.as_tensor(t[0], device=DEVICE)
+                              for t in tr3_])
+        ypre_ = torch.as_tensor(np.hstack([t[1] for t in tr3_]),
+                                device=DEVICE)
+        for epoch_ in range(500 if SMOKE else 2000):
+            opt_enc_.zero_grad()
+            ((enc_(Zpre_).sum(1) - ypre_) ** 2).mean().backward()
+            opt_enc_.step()
         dtot_ = d_lat_ + 1
         mask3_ = 1.0 - torch.eye(dtot_, device=DEVICE)
         Ws3_np_ = None
@@ -480,7 +492,7 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
                                (y_dev_[0].var() + 1e-6).reshape(1)])
             Wm_ = torch.zeros(dtot_, dtot_, device=DEVICE, requires_grad=True)
             Dl_ = [torch.zeros(dtot_, dtot_, device=DEVICE, requires_grad=True)
-                   for _ in range(2)]
+                   for _ in range(len(tr3_))]
             # v1 fix: L-BFGS inner solver (Adam fails to converge here — the
             # same failure mode found in the linear fitters).
             opt3_ = torch.optim.LBFGS([Wm_] + Dl_,
@@ -524,7 +536,7 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
                 Ws3_np_ = [((Wm_ + D) * mask3_).cpu().numpy() for D in Dl_]
 
         st3_ = np.stack(Ws3_np_)
-        adj3_ = ((st3_.var(0) < 0.05) &
+        adj3_ = ((st3_.var(0) < 0.01) &
                  (np.abs(st3_).mean(0) > 0.1)).astype(float)
         anc_, frontier3_ = set(), [dtot_ - 1]
         while frontier3_:
@@ -556,6 +568,7 @@ def _(DEVICE, RUN_PART3, SMOKE, h_poly, np, torch):
             scin_res_ = {"ood0": float("nan"), "ood_neg": float("nan"),
                          "note": "no latents selected"}
         return {"erm_ood_mse": erm_res_, "scin_v0_mse": scin_res_,
+                "version": "v2-pretrained-encoder-3env",
                 "n_latents_selected": len(sel3_), "d_latent": d_lat_}
 
     part3_res = run_part3() if RUN_PART3 else None

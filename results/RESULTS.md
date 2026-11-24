@@ -200,3 +200,16 @@ Part 3 neural SCIN v0: negative result — OOD MSE 3.09/12.89 vs ERM-MLP
 inner solver for the latent SEM, the same optimizer that provably fails to
 converge in the linear fitters. v1 switches Part 3 to an L-BFGS inner
 solver (strong-Wolfe) and 5 refinement phases; awaiting GPU rerun.
+
+### Neural SCIN iteration (v1 -> v2), CPU diagnosis, 2026-11-24
+
+v1 (L-BFGS inner) on GPU: OOD MSE 2.73/11.25 vs ERM 0.45/2.00 — better than
+v0 but still failing. CPU diagnosis: the v0/v2 encoder was RANDOM (never
+trained), destroying the invariance structure in latent space (untrained
+latents still hold y-information, R^2=0.84 pooled, but no invariant
+subgraph). v2 changes: (a) ERM-pretrained encoder, (b) 3 training
+environments (betas 2.0/1.4/0.8), (c) var_tol 0.01. Local CPU check (2-3
+seeds, n=1500/env): v2 OOD0 0.36-0.52, OOD_neg 1.52-1.60 vs ERM-MLP mean
+0.55 / 2.23 — beats ERM on average, esp. ood_neg (~30% lower). One seed
+selected 0 latents (filter too strict) — open issue. Notebook Part 3
+updated to this design; GPU rerun pending.
