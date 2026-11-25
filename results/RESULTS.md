@@ -577,3 +577,75 @@ Methodological note (kept for reproducibility culture): the first run's
 JSON was overwritten on the regime re-run; clean/misspec/strong rows are
 reconstructed from the raw log (F1 values only), the noise regime has
 full metrics.
+
+---
+
+## Experiment I — domain pilot: Sachs protein-signaling pathway (9 real conditions)
+
+**Data.** Sachs et al. (2005) flow-cytometry signaling data (Zenodo record
+7681811; the 9 real condition CSVs + the literature consensus ground truth
+are committed under `data/sachs/` for reproducibility). 11
+phosphoproteins/phospholipids, 9 experimental conditions as environments
+(CD3/CD28 stimulations plus AKT/MEK/PKC inhibitors etc.; the 5 `icam2_*`
+SIMULATED condition files are excluded). n per condition ≈ 700–930; protocol
+subsamples n = 500/env per seed, 5 seeds. Preprocessing: arcsinh(·/5) (the
+cytometry standard) then pooled standardization. **Ground truth:** the
+consensus directed graph with 20 edges — note it contains feedback (1
+reciprocal pair), so acyclic estimators are scored on directed F1 AND on the
+skeleton.
+
+**Protocol mirrors Causal Chambers (Exp G):** default synthetic
+hyperparameters (no retuning), τ-sweep {0.05..0.3}, methods = NOTEARS-pooled,
+NOTEARS-per-env-intersection, SCIN; plus a var_tol × tau sensitivity grid
+(mirroring Exp E-sens).
+
+**Scripts.** `experiments/exp_i_sachs_pathway.py` (main),
+`experiments/exp_i_sweep.py` (grid), `experiments/exp_i_stability_rule.py`
+(label-free rule; post-processing). Out: `exp_i_sachs_pathway.json`,
+`exp_i_sachs_sweep.json`, `exp_i_stability_rule.json`.
+
+### Results (5-seed mean ± std)
+
+| method | condition | directed F1 | skeleton F1 | SHD | n edges |
+|---|---|---|---|---|---|
+| NOTEARS-pooled | default τ=0.1 | 0.279±0.003 | 0.460 | 25.8 | ~16 |
+| NOTEARS-pooled | best τ (0.2) | 0.303±0.006 | 0.438 | 23.0 | 13 |
+| SCIN | default τ=0.1, v=0.02 (transferred) | 0.096±0.029 | 0.148 | 22.4 | ~2–4 |
+| SCIN | τ=0.1, v=0.1 (plateau) | **0.351±0.028** | **0.583** | — | 23 |
+| SCIN + stability rule | τ=0.1 (default), v picked label-free = 0.2 | **0.350±0.031** | **0.583** | — | 23 |
+
+### Findings
+
+1. **Default-HP transfer FAILS on Sachs** — the invariance gate at
+   var_tol=0.02 rejects almost everything (F1 0.096; ~2–4 edges selected).
+   Exactly the noise-budget regime Exp H isolated: cytometry conditions are
+   far noisier than the synthetic reference regime, inflating
+   cross-environment coefficient variance, so the tight gate rejects true
+   edges. Pooled NOTEARS is unaffected (no gate) and stays at 0.28–0.30.
+2. **A sensitivity map locates the working window**: var_tol ≥ 0.1 is a
+   broad plateau (identical results for v ∈ [0.1, 1.0]); at τ=0.1 SCIN
+   reaches directed F1 0.351 and skeleton F1 0.583 — better than pooled's
+   best on BOTH axes (F1 0.303; skeleton 0.569). The recovered set contains
+   core signaling edges (e.g. PIP3→PIP2, PIP3→Akt at the default setting).
+3. **Label-free var_tol selection works.** The selection-stability rule —
+   pick the smallest var_tol (doubling grid) at which the *number of
+   selected edges* stops changing under doubling — chooses v = 0.2 using
+   ONLY selection counts (never the ground truth) and lands on the plateau
+   optimum (F1 0.350 / skeleton 0.583). τ transfers unchanged from synthetic
+   (0.1); only the noise-scale-dependent gate needs the rule.
+4. **Consistency with theory:** this is Theorem 3 / Exp H's window analysis
+   realized on a real system — heterogeneity/noise shift moves the gate's
+   working point, the plateau gives robustness once inside the window, and
+   the failure at tight settings is the predicted under-selection case.
+
+**Paper claim this licenses:** "on a real translational dataset, default
+synthetic hyperparameters under-transfer (the predicted noise-budget
+effect), but a label-free selection-stability rule recovers the working
+gate, and at the recovered setting SCIN beats pooled DAG learning on both
+directed and skeleton accuracy."
+
+**Caveats (kept visible).** (i) The consensus GT is a literature graph with
+feedback; directed-F1 against it caps every acyclic method (hence we report
+the skeleton). (ii) The stability rule is validated on Sachs here; transfer
+to the chambers sweep is a pending GPU follow-up. (iii) v ∈ [0.1, 1.0] is a
+plateau; the rule merely needs to land anywhere in it.

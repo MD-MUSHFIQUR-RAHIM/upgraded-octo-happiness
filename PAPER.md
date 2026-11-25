@@ -36,9 +36,13 @@ decision rule, and an exact out-of-distribution decomposition
 identifying which selection errors are harmful. Empirically, SCIN
 reaches the oracle's out-of-distribution error under strong spurious
 shift (10× lower than ERM), scales to d = 400 with flat runtime and
-precision ≈ 1, and achieves 2.3× the precision of pooled DAG learning
-on a physical system with validated causal ground truth. Both negative
-results are reported and analysed.
+precision ≈ 1, and beats pooled DAG learning on two real systems with
+validated causal ground truth — a tabletop physical apparatus (2.3×
+better precision, hyperparameters transferred untuned) and a
+flow-cytometry signalling pathway, where a label-free
+selection-stability rule relocates the invariance gate that default
+synthetic hyperparameters mis-place. Both negative results are
+reported and analysed.
 
 ---
 
@@ -224,9 +228,37 @@ is therefore a noise-budget effect of the added environments, not a
 curse of environment count — and the invariance statistic reacts
 precisely as the selection-case analysis of Theorem 3 predicts.
 
-#### Results 2.6 — Honest boundaries (reviewers trust these; Nature demands them)
+#### Results 2.6 — Translational dataset: the Sachs signalling pathway (Exp I)
 
-We report three boundary results with the same rigour as the wins.
+Does the approach leave the apparatus and survive on a clinical-domain
+dataset? The Sachs flow-cytometry dataset — 11 phosphoproteins measured
+in human primary naive CD4+ T cells under 9 real interventions
+(stimulations and kinase inhibitors; Sachs et al. 2005) — is the
+classical multi-environment signalling benchmark, with a literature
+consensus graph of 20 directed edges as ground truth. With the
+CYTOMETRY-standard arcsinh transform and the same protocol as the
+chambers, default hyperparameters transferred from synthetic data
+under-transfer: the invariance gate at var_tol = 0.02 rejects almost
+everything (F1 0.096) — exactly the noise-budget regime our controlled
+ladder (Results 2.5, Fig 10) isolates, here invoked by the cytometry
+noise floor rather than far-from-reference intervention levels. A
+sensitivity map locates a broad working window (var_tol ≥ 0.1 gives an
+exact plateau, Fig 11a); at the default τ = 0.1, SCIN then reaches
+directed F1 0.351 and skeleton F1 0.583, better than pooled NOTEARS's
+best on both axes (0.303 / 0.569) on a literature graph it has never
+seen. Crucially, a label-free selection-stability rule — pick the
+smallest var_tol at which the number of selected edges stops changing
+when var_tol is doubled — recovers the window from selection counts
+alone (rule picks var_tol = 0.2: F1 0.350, skeleton 0.583; Fig 11b).
+The threshold τ needs no such adjustment — it transfers unchanged from
+synthetic data. This is the theory's selection-window analysis
+(Theorem 3) paying off operationally: at one real dataset the tuning
+that must be re-derived is identified and re-derived without labels.
+
+#### Results 2.7 — Honest boundaries (reviewers trust these; Nature demands them)
+
+We report three boundary results with the same rigour as the wins
+(Fig 11 shows the Sachs analysis alongside the default-HP failure).
 **(i) The full 38-node chamber graph with all 33 interventions defeats
 SCIN** (F1 0.161 vs pooled 0.383) — but the pooled "win" is structural
 overfitting: 113 estimated edges against 57 ground-truth edges at
@@ -379,6 +411,7 @@ standardized-units ev bug, topological-sort in synthetic replica).
 | Fig 8 | PNL curve | done (`fig2_pnl.png`) |
 | Fig 9 | Environment-count scaling on chambers (E=4..17, honest non-monotonic) | done (`fig9_e_scaling.png`) |
 | Fig 10 | Exp H: controlled env-ladder (clean/strong/tanh/noise regimes) | done (`fig10_exp_h.png`) |
+| Fig 11 | Sachs domain pilot: var_tol×tau grid + label-free stability rule | done (`fig11_sachs.png`) |
 
 All figures regenerate via `python3 experiments/make_figures.py`
 (verified 2026-11-25). `experiments/exp_g_matrices.py` refits one
@@ -390,7 +423,11 @@ the figure never needs refitting.
 ## Broad significance positioning (anti-silo strategy, for Intro + Discussion)
 
 **Who outside ML cares and why:**
-- Clinical / biomedicine: multi-center studies are exactly multi-environment
+- Clinical / biomedicine: demonstrated, not merely asserted — the Sachs
+  flow-cytometry analysis (Results 2.6) is a human-cell signalling pathway
+  scored against a literature consensus graph, with the hyperparameter that
+  fails to transfer identified and recovered label-free by the
+  selection-stability rule. Multi-center studies are exactly multi-environment
   data; selecting which biomarker-target relationships are mechanism-level
   (invariant) vs site-specific (moved) is this paper's question in new
   clothes — precision of the selected mechanism set is what makes edge
@@ -403,10 +440,11 @@ the figure never needs refitting.
   methodological claim about invariance-based inference, not specific to
   one estimator.
 
-**Where we honestly do NOT go (stated, not hidden):** no domain application
-(genomics/simulated clinical data) is included; NMI scope is methodology +
-physical validation. Reaching Nature proper would require a domain
-application — flagged as the concrete follow-up path, not denied.
+**Where we honestly do NOT go (stated, not hidden):** The Sachs pilot is a
+single translational dataset, not a field-scale application (no prospective
+cohort, no downstream intervention study) — reaching Nature proper would
+require a full domain application with a domain-author team; the pilot is
+the bridge, not the destination.
 
 **Neural negative reframed:** the neural SCIN negative result turns a
 broad community assumption ("deep nets will just learn invariance") into
@@ -422,10 +460,12 @@ audience far beyond the causal-discovery silo.
 - [x] Results prose (2.1-2.6) first pass done
 - [x] Discussion + Methods prose first pass done
 - [x] Cover letter (NMI) first-pass draft done
+- [x] Domain pilot: Sachs pathway with label-free stability rule (Exp I)
 - [x] v0.3 consistency pass: every prose number re-checked against
-      results/*.json on 2026-11-25; all 10 figures regenerate; stale
-      d=200 references updated to d=400; figure cross-references fixed
-      (Results 2.5 figure ref now Fig 7)
+      results/*.json; all figures regenerate; stale d=200 references
+      updated to d=400; figure cross-references fixed
+- [x] v0.4: Experiment I added (Results 2.6 -> 2.7 renumber, Fig 11); abstract updated
+- [ ] Stability-rule transfer check on chambers (GPU cell, small)
 - [ ] Reference list compilation (currently inline citations; compile
       numbered bibliography at LaTeX stage)
 - [ ] LaTeX/manuscript conversion

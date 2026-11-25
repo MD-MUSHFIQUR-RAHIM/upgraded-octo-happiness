@@ -5,6 +5,8 @@ results/figures/. Run from the repo root:  python experiments/make_figures.py
 """
 
 import json
+
+import numpy as np
 import os
 
 import matplotlib
@@ -413,6 +415,65 @@ def fig8_concept():
     plt.close(fig)
 
 
+
+def fig11_sachs():
+    """Experiment I: Sachs domain pilot (grid heatmap + method bars)."""
+    import matplotlib.pyplot as plt
+    grid = jload("exp_i_sachs_sweep.json")
+    rule = jload("exp_i_stability_rule.json")
+    gm = grid["grid_mean"]
+    VT = [0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
+    TAU = [0.02, 0.05, 0.1, 0.15, 0.2, 0.3]
+    M = np.zeros((len(VT), len(TAU)))
+    for a, vt in enumerate(VT):
+        for b, tau in enumerate(TAU):
+            M[a, b] = gm[f"{vt}|{tau}"]["f1"]
+
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4.2),
+                           gridspec_kw={"width_ratios": [1.15, 1]})
+    im = ax[0].imshow(M, aspect="auto", origin="lower", cmap="viridis",
+                      vmin=0, vmax=1)
+    ax[0].set_yticks(range(len(VT)), [str(v) for v in VT])
+    ax[0].set_xticks(range(len(TAU)), [str(t) for t in TAU])
+    ax[0].set_xlabel(r"selection threshold $\tau$")
+    ax[0].set_ylabel(r"invariance gate $v$ (var\_tol)")
+    ax[0].set_title("SCIN F1 on Sachs (5-seed mean); "
+                    "plateau for $v\\geq$0.1")
+    for a, vt in enumerate(VT):
+        for b, tau in enumerate(TAU):
+            ax[0].text(b, a, f"{M[a, b]:.2f}", ha="center", va="center",
+                       color="w" if M[a, b] < 0.55 else "k", fontsize=8)
+    ax[0].add_patch(plt.Rectangle((2.5, 1.5), 3, 4.5, fill=False,
+                                  edgecolor="w", lw=2, ls="--"))
+    ax[0].annotate("stability rule picks\nlabel-free $v$=0.2",
+                   xy=(2, 3), xytext=(0.4, 4.0), color="w", fontsize=8,
+                   arrowprops=dict(arrowstyle="->", color="w"))
+    fig.colorbar(im, ax=ax[0], fraction=0.046)
+
+    pk = rule["picks_by_tau"]["0.1"]["perf_at_pick"]
+    labels = ["NOTEARS-pooled\n(best $\\tau$)", "SCIN\n(default $v$=0.02)",
+              "SCIN + stability\nrule (label-free)"]
+    f1 = [max(r["f1"] for r in grid["rows"] if r["m"] == "NOTEARS-pooled"),
+          gm["0.02|0.1"]["f1"], pk["f1"]]
+    sf1 = [max(r["s_f1"] for r in grid["rows"] if r["m"] == "NOTEARS-pooled"),
+           gm["0.02|0.1"]["skel_f1"], pk["skel_f1"]]
+    x = np.arange(3)
+    w = 0.38
+    ax[1].bar(x - w / 2, f1, w, label="directed F1", color="#3b6fb5")
+    ax[1].bar(x + w / 2, sf1, w, label="skeleton F1", color="#e8a13a")
+    for xi, (a1, a2) in enumerate(zip(f1, sf1)):
+        ax[1].text(xi - w / 2, a1 + 0.01, f"{a1:.2f}", ha="center", fontsize=9)
+        ax[1].text(xi + w / 2, a2 + 0.01, f"{a2:.2f}", ha="center", fontsize=9)
+    ax[1].set_xticks(x, labels)
+    ax[1].set_ylim(0, 0.8)
+    ax[1].set_ylabel("F1 (directed / skeleton)")
+    ax[1].set_title("Sachs pathway: default HP transfer fails,\n"
+                    "label-free rule recovers the window")
+    ax[1].legend(fontsize=9)
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIGS, "fig11_sachs.png"), dpi=160)
+    print("fig11 saved")
+
 if __name__ == "__main__":
     fig1_scaling()
     fig2_pnl()
@@ -442,6 +503,10 @@ if __name__ == "__main__":
         fig10_exp_h()
     except FileNotFoundError as e:
         print("fig10 skipped:", e)
+    try:
+        fig11_sachs()
+    except FileNotFoundError as e:
+        print("fig11 skipped:", e)
     print("figures written to", FIGS)
     for f in sorted(os.listdir(FIGS)):
         print("  ", f)
