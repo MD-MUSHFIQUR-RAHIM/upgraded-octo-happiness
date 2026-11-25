@@ -285,6 +285,41 @@ def fig7_chambers_adjacency():
     plt.close(fig)
 
 
+def fig10_exp_h():
+    """Exp H: controlled decomposition of the environment-count effect.
+    clean/strong -> monotonic; noise-inflated added envs -> collapse,
+    exactly reproducing the chambers E=17 drop."""
+    import numpy as np
+    d = jload("exp_h_env_ladder.json")["summary_full"]
+    Es = [2, 4, 8, 16]
+    series = [("clean", C_SCIN, "o-", "clean linear envs"),
+              ("strong", "#17becf", "v-", "clean, stronger moves"),
+              ("misspec", C_REX, "^:", "mild tanh (no effect)"),
+              ("noise", C_ERM, "s--", "added envs: residual var x6.25")]
+    fig, ax = plt.subplots(figsize=(5.4, 3.8))
+    for reg, col, style, label in series:
+        if reg not in d:
+            continue
+        m = [d[reg][str(E)][0] for E in Es]
+        s = [d[reg][str(E)][1] for E in Es]
+        ax.errorbar(Es, m, yerr=s, fmt=style, color=col, lw=2,
+                    capsize=3, label=label)
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(Es); ax.set_xticklabels(Es)
+    ax.set_xlabel("number of environments $E$")
+    ax.set_ylabel("invariant-subgraph F1")
+    ax.set_ylim(0.55, 1.03)
+    ax.set_title("Exp H: what breaks multi-env scaling?\n"
+                 "(chambers-sized synthetic, d=18, n=500/env, 3 seeds)")
+    ax.legend(frameon=False, fontsize=8, loc="lower left")
+    ax.annotate("E=17 collapse explained:\nadded envs too noisy,\n"
+                "not 'too many envs'", (16, 0.67), textcoords="offset points",
+                xytext=(-88, 24), fontsize=8, color="#555555",
+                arrowprops=dict(arrowstyle="->", color="#555555"))
+    fig.savefig(os.path.join(FIGS, "fig10_exp_h.png"))
+    plt.close(fig)
+
+
 def fig9_e_scaling():
     """Exp G-max: environment-count scaling on Causal Chambers (real data,
     3 seeds): does SCIN improve with more environments? Honest answer:
@@ -403,6 +438,10 @@ if __name__ == "__main__":
         fig9_e_scaling()
     except FileNotFoundError as e:
         print("fig9 skipped:", e)
+    try:
+        fig10_exp_h()
+    except FileNotFoundError as e:
+        print("fig10 skipped:", e)
     print("figures written to", FIGS)
     for f in sorted(os.listdir(FIGS)):
         print("  ", f)

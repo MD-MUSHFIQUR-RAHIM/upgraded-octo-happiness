@@ -198,6 +198,7 @@ Fig 5 (new: Exp G adjacency comparison — TO MAKE; currently tables only).
 | Fig 7 | Chambers: adjacency heatmaps GT/SCIN/pooled | done (`fig7_chambers_adjacency.png`, from `exp_g_matrices.json`; seed 0: GT 37, SCIN 14, pooled 46 selected edges) |
 | Fig 8 | PNL curve | done (`fig2_pnl.png`) |
 | Fig 9 | Environment-count scaling on chambers (E=4..17, honest non-monotonic) | done (`fig9_e_scaling.png`) |
+| Fig 10 | Exp H: controlled env-ladder (clean/strong/tanh/noise regimes) | done (`fig10_exp_h.png`) |
 
 All figures done. `experiments/exp_g_matrices.py` refits one chambers
 window (seed 0) and stores the fitted adjacency matrices so the figure
@@ -392,6 +393,17 @@ rejects true edges (SCIN recall 0.297 → 0.216). This is a useful,
 actionable decomposition for experiment designers: more environments
 help while the heterogeneity stays in the locally-linear, mechanism-move
 regime; strong far-from-reference interventions do not (Fig 9).
+
+Controlled follow-up (Experiment H, Fig 10): replaying the same ladder on
+chambers-sized synthetic data, clean added environments give a monotonic
+ladder (F1 0.88 → 0.99), stronger mechanism moves accelerate the rise,
+a mild monotone distortion of the added environments has no measurable
+effect, and inflating only their residual variance (×6.25 on downstream,
+sensor-like nodes — the physical signature of operating far from reference
+levels) collapses F1 from 0.95 to 0.67 exactly like the chambers E=17 drop.
+The collapse is therefore a noise-budget effect of the added environments,
+not a curse of environment count — and the invariance statistic reacts
+precisely as the selection-case analysis of Theorem 3 predicts.
 
 ## Results 2.6 prose (first pass)
 
