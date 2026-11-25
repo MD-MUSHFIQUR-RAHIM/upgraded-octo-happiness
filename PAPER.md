@@ -1,4 +1,4 @@
-# PAPER.md — Draft skeleton (v0.1)
+# PAPER.md — v0.3 (assembled first pass; all numbers verified against results/*.json)
 
 **Working title:**
 *"Sparse Causal Intervention Networks: Learning Invariant Mechanisms
@@ -8,205 +8,43 @@ from Multiple Environments for Distribution-Shift Generalization"*
 Computational Science. Short-format (NMI Letter ~4,500 words / Article
 ~3,000–5,000 words main text, Methods after).
 
-**Claim discipline (per plan v2.0):** every number below is committed in
-`results/*.json` + `RESULTS.md`; overclaiming is fenced by the "Limits"
-lines in each section. The neural and full-chambers negative results are
-part of the paper, not hidden.
+**Claim discipline (per plan v2.0):** every number below was checked
+against the committed `results/*.json` on 2026-11-25 (v0.3 consistency
+pass); overclaiming is fenced by the "Limits" lines in each section.
+The neural and full-chambers negative results are part of the paper,
+not hidden.
 
 ---
 
-## Abstract (≤ 200 words, to write last)
+## Abstract (finished draft, ~190 words)
 
-Skeleton points:
-- Problem: predictive models fail under distribution shift because they
-  fit environment-dependent (spurious) mechanisms alongside invariant
-  causal ones.
-- Approach: SCIN — one differentiable objective that jointly fits a
-  shared mechanism matrix W plus per-environment deltas Δ_e, uses
-  per-environment acyclicity for structure and an equal-variance
-  criterion for orientation, then selects edges whose coefficients are
-  invariant across environments.
-- Killer numbers: invariant-edge recovery F1 0.945±0.028 vs 0.851 for
-  pooled continuous DAG learning (synthetic); OOD error equal to the
-  oracle noise floor (0.99 vs ERM 10.1, 10×) under a strong spurious
-  shift; precision 0.69 vs 0.30 on a physical system with validated
-  ground truth (Causal Chambers light tunnel); beats a node-wise ICP
-  baseline (F1 0.94 vs ~0.11). Theory: identifiability under
-  equal-noise variances + quantitative mechanism heterogeneity, and an
-  exact OOD decomposition showing pooled ERM pays a shift-amplified
-  spurious term that SCIN provably removes.
-- Honest boundary: linear mechanisms; the neural instantiation and the
-  full 38-node chamber graph are documented negative results.
+Models trained on pooled data from multiple environments entangle two
+kinds of statistical regularities: causal mechanisms that remain fixed
+across environments, and environment-dependent mechanisms that do not.
+Under distribution shift only the former are safe to rely on, yet
+standard practice requires choosing between pooled fitting, which
+cannot in principle separate them, and invariance testing, which we
+show has no power in regimes of scarce, weak mechanism heterogeneity.
+Here we introduce the Sparse Causal Intervention Network (SCIN), a
+differentiable estimator that jointly fits a shared mechanism matrix
+and per-environment displacements under per-environment acyclicity and
+an equal-noise-variance orientation criterion, then retains exactly
+those edges whose coefficients are invariant across environments. We
+prove identifiability of the invariant mechanism set under quantitative
+heterogeneity, a constructive impossibility result for any pooled
+decision rule, and an exact out-of-distribution decomposition
+identifying which selection errors are harmful. Empirically, SCIN
+reaches the oracle's out-of-distribution error under strong spurious
+shift (10× lower than ERM), scales to d = 400 with flat runtime and
+precision ≈ 1, and achieves 2.3× the precision of pooled DAG learning
+on a physical system with validated causal ground truth. Both negative
+results are reported and analysed.
 
 ---
 
 ## Main text (Results-first, Nature format)
 
-### 1. Introduction (≈ 800 words)
-
-- The distribution-shift failure is a mechanism-inference problem:
-  models trained on pooled data entangle invariant causal mechanisms
-  with environment-dependent ones (cite: Pearl 2009; Peters et al. 2016;
-  Arjovsky et al. 2020 IRM; Kilbertus et al.).
-- Existing options fail at the margins: ICP-type invariance *testing*
-  has no statistical power at weak, sparse heterogeneity (we quantify:
-  F1 ≈ 0.11); pooled continuous DAG learning cannot in principle
-  separate invariant from moved mechanisms (T2 here: a constructive
-  two-SCM indistinguishability); IRM/V-REx shift invariance to the risk
-  level, which is too coarse when a spurious feature lowers risk in all
-  training environments (Exp B: V-REx ≈ ERM).
-- Contribution (3 bullets):
-  1. SCIN: joint continuous estimation of {invariant mechanisms,
-     moved mechanisms, orientation} from 2+ environments via a single
-     differentiable objective (per-env acyclicity + equal-variance
-     criterion + invariance selection).
-  2. Theory: identifiability with quantitative heterogeneity
-     (A2∗, Theorem 1), impossibility for pooled rules (T2), exact OOD
-     decomposition with a selection-case analysis that predicts both
-     the wins and the failure modes (T3/T3′).
-  3. Empirics spanning synthetic → physical: 5 falsification
-     experiments where two are honest negatives; a sensitivity analysis
-     that maps the selection window rather than cherry-picking.
-
-### 2. Results (≈ 2,000 words; all figures here)
-
-#### Results 2.1 — Invariant-mechanism recovery: precision is the battleground
-Fig 1 (exp A table + Phase-2 ablation panel).
-- SCIN F1 0.945±0.028 vs NOTEARS-pooled 0.851 vs per-env intersection
-  0.839; the entire advantage is precision (+0.16–0.18).
-- Ablation: equal-variance criterion most load-bearing (0.945→0.244
-  without it); invariance statistic and per-env deltas each carry
-  ~0.11–0.13. Every component earns its place.
-
-#### Results 2.2 — Scaling to d = 400 on GPU with flat runtime
-Fig 2 (fig1_scaling.png).
-- F1 0.889/0.928/0.905/0.958/0.925/0.931 at d = 25/50/100/200/300/400
-  (n=2000/env, RTX PRO 6000 Blackwell GPU; precision 0.96–1.00,
-  SCIN stage 24 s at d=200, 215 s at d=400, fp64).
-- Sample-complexity: flat F1 from n=250/env at d=10.
-
-#### Results 2.3 — OOD generalization: oracle-equal under spurious shift
-Fig 3 (fig3_ood_bars.png).
-- Exp B (child-side spurious, s←y): SCIN == Oracle exactly
-  (10/10 seeds), OOD MSE 0.994 vs ERM 10.125 (10×), ID penalty 2.2×
-  (report it: invariance trade-off is real).
-- Exp E (confounded, s→y INSIDE the mechanism, sign-flip shift):
-  SCIN 1.006±0.015 == Oracle 1.005 at the final setting; ERM 1.339.
-  Selection = {x0,x1,x2} in 5/5 seeds.
-- V-REx ≈ ERM here — risk-level invariance does not see the mechanism.
-- Selection-sensitivity (fig6_e_sens.png): robust plateau exists —
-  var_tol∈[0.02,0.05]×tau∈[0.05,0.1]; both failure modes at the
-  extremes are predicted by T3's case analysis (under-selection drops
-  a parent; over-selection re-admits s). No cherry-picking: the grid is
-  in the paper.
-
-#### Results 2.4 — The baseline class that cannot work: ICP has no power
-Fig 4 (fig5_icp.png).
-- Node-wise ICP with exact F-tests: F1 0.107±0.068 (2 envs) /
-  0.117±0.070 (4 envs) vs SCIN 0.945/0.946 on identical data.
-- Mechanism: subset-intersection receives ~350/512 accepted subsets
-  per target; empty intersections in 7–10/10 targets.
-- Framing (non-competitor): invariance testing (ICP) and invariance
-  estimation (SCIN) occupy opposite regimes; complementary, not rival.
-
-#### Results 2.5 — Physical system: Causal Chambers light tunnel
-Fig 5 (new: Exp G adjacency comparison — TO MAKE; currently tables only).
-- 12 real interventions, 18-node observable subgraph, 37 GT edges.
-- SCIN precision 0.786 (CPU) / 0.688 (GPU 5-seed) vs pooled 0.263/0.300;
-  F1 0.430/0.415 vs 0.300/0.345; SHD 29/31 vs 61/57. Best tau = the
-  a-priori default 0.1 — hyperparameters transfer from synthetic. No
-  retuning.
-- Precision-limited story: what SCIN selects is mostly physically real;
-  what it misses is explained (unmeasured diode-internal parents,
-  cos²-polarizer nonlinearity, n=500).
-
-#### Results 2.6 — Honest boundaries (reviewers trust these; Nature demands them)
-- **Part B, full 38-node chamber graph, 33 envs: NEGATIVE.** SCIN F1
-  0.161 vs pooled 0.383 — but pooled "wins" by overfitting (113 SHD vs
-  57 GT edges, precision 0.28). Failure is upstream of the selection
-  rule: parents varying in 1/33 envs have unidentifiable coefficients;
-  sin/cos mechanisms are not locally linear; multicollinear light basis.
-  Ties directly to T3′ non-coverage list.
-- **Neural SCIN: NEGATIVE across 3 design generations** (random
-  encoder / ERM-pretrained encoder / joint end-to-end AL training;
-  5 seeds each on GPU). Best variant OOD 0.436±0.054 vs ERM-MLP
-  0.383±0.019. Diagnosis: encoder entangles the spurious direction with
-  causal latents; the invariance statistic in latent space is fragile.
-  Future work: invariance-aware encoder training.
-- **PNL robustness (partial positive):** F1 0.930→0.856 as tanh
-  distortion goes 0→1.0; graceful, no cliff (fig2_pnl.png).
-
-### 3. Discussion (≈ 1,000 words)
-
-- Invariance is a *statistic on coefficients*, not on risks — the
-  conceptual takeaway (connects to why IRM fails here).
-- Testing vs estimation dichotomy (ICP vs SCIN).
-- When pooled baselines "look better": overfit-structure accounting
-  (SHD accounting) as a reporting practice recommendation.
-- Broader impact: high-precision partial recovery is the safe operating
-  mode for scientific discovery — a conservative edge set with 0.79
-  precision is actionable for experiment designers (chambers case);
-  a dense 0.28-precision graph is not.
-- Limitations: linear + equal-variance identifiability (degrades
-  gracefully: fig4 panel b), A3 is an assumption (T3′), solver genie
-  gap in T1 (flagged, standard in the NOTEARS literature).
-- Future: invariance-aware representation learning; rarely-varying
-  parents; nonlinear mechanism classes (PNL-robust continuous
-  orientation criteria).
-
-### 4. Methods (≈ 3,000 words, after main text)
-
-1. The SCIN objective (per-env W_e = W + Δ_e; per-environment
-   polynomial acyclicity tr((I+W∘W/d)^d)−d; ℓ1 on W; ridge on Δ_e;
-   equal-variance penalty in original units; augmented Lagrangian,
-   L-BFGS strong-Wolfe inner solver, fp64).
-2. Selection statistic + masked variant (per-parent env subsets with
-   per-env std > 0.1, ≥3 varying envs).
-3. Theory (condensed T1–T3; full proofs Supplementary, THEORY.md v2.0).
-4. Experimental protocols: Exp A/B/E/E-sens/F/G synthetic + chambers
-   setup; environment counts, seeds, HP selection on validation seeds
-   only (never test); GPU runs (RTX PRO 6000 Blackwell 96 GB; Colab
-   replication 5 seeds).
-5. Baselines: NOTEARS-pooled, NOTEARS-per-env-intersection, V-REx,
-   node-wise ICP (exact subset enumeration + F-tests), correlation
-   thresholding, Oracle.
-6. Statistics: per-seed mean±sd, paired comparisons, effect size
-   (Cohen's d ≈ 22 for Exp B headline); all raw JSONs in repo.
-7. Reproducibility: single-cell Colab scripts + marimo notebook,
-   SMOKE flags, commit-pinned; figure-generation script.
-
-### Supplementary
-
-- Full theorem statements + proofs (THEORY.md v2.0 verbatim).
-- All result JSONs and logs; negative-result appendix (neural SCIN
-  3 generations; Chambers Part B failure-mode analysis).
-- Bug-and-fix log (serves reproducibility culture; e.g. hstack
-  interleave, fp32 L-BFGS overflow, standardized-units ev bug).
-
----
-
-## Figure plan (final)
-
-| # | Content | Status |
-|---|---|---|
-| Fig 1 | Concept: mechanism moves + estimator schematic | done (`fig8_concept.png`) |
-| Fig 2 | Scaling (d → 400 GPU; n/env) | done (`fig1_scaling.png`) |
-| Fig 3 | OOD bars: Exp B + Exp E vs oracle floor | done (`fig3_ood_bars.png`) |
-| Fig 4 | Ablations + A1-violation panel | done (`fig4_ablation_violation.png`) |
-| Fig 5 | ICP power collapse | done (`fig5_icp.png`) |
-| Fig 6 | Selection-sensitivity plateau | done (`fig6_e_sens.png`) |
-| Fig 7 | Chambers: adjacency heatmaps GT/SCIN/pooled | done (`fig7_chambers_adjacency.png`, from `exp_g_matrices.json`; seed 0: GT 37, SCIN 14, pooled 46 selected edges) |
-| Fig 8 | PNL curve | done (`fig2_pnl.png`) |
-| Fig 9 | Environment-count scaling on chambers (E=4..17, honest non-monotonic) | done (`fig9_e_scaling.png`) |
-| Fig 10 | Exp H: controlled env-ladder (clean/strong/tanh/noise regimes) | done (`fig10_exp_h.png`) |
-
-All figures done. `experiments/exp_g_matrices.py` refits one chambers
-window (seed 0) and stores the fitted adjacency matrices so the figure
-never needs refitting.
-
----
-
-## Introduction — first-pass prose
+### 1. Introduction (~800 words)
 
 Predictive models deployed in the real world encounter distributions
 their training data never contained. The dominant explanation for the
@@ -214,18 +52,19 @@ resulting failures is mechanism-level: a model trained by pooled risk
 minimization entangles mechanisms that stay fixed across environments
 (the causal ones) with mechanisms that move (the environment-dependent,
 spurious ones) — and when the moved mechanisms shift again at test
-time, the model fails (Pearl 2009; Peters, Janzing & Schölkopf 2016).
-The existing toolset attacks this at three levels, each with a
-quantified weakness that our experiments expose. Invariance *testing*
-(ICP) has no statistical power in the regime of scarce, weak mechanism
-moves: with 3 of 10 mechanisms moved we measure F1 ≈ 0.11 (Exp F).
-Pooled continuous DAG learning cannot in principle separate invariant
-from moved mechanisms (Theorem 2: a constructive indistinguishability
-argument) — its apparent accuracy under heterogeneity is bounded by
-its contamination with moved mechanisms. Risk-level invariance methods
-(IRM/V-REx) fail when the spurious feature lowers risk in *every*
-training environment (Exp B: V-REx within noise of ERM while a 10× OOD
-gap is available to mechanism-level invariance).
+time, the model fails (Pearl 2009; Peters, Janzing & Schölkopf 2016),
+*cite: Arjovsky et al. 2020 IRM; Kilbertus et al.* The existing toolset
+attacks this at three levels, each with a quantified weakness that our
+experiments expose. Invariance *testing* (ICP) has no statistical power
+in the regime of scarce, weak mechanism moves: with 3 of 10 mechanisms
+moved we measure F1 ≈ 0.11 (Exp F, Results 2.4). Pooled continuous DAG
+learning cannot in principle separate invariant from moved mechanisms
+(Theorem 2: a constructive indistinguishability argument) — its
+apparent accuracy under heterogeneity is bounded by its contamination
+with moved mechanisms. Risk-level invariance methods (IRM/V-REx) fail
+when the spurious feature lowers risk in *every* training environment
+(Exp B: V-REx within noise of ERM while a 10× OOD gap is available to
+mechanism-level invariance).
 
 We propose SCIN, an estimator that answers a different question: not
 "which prediction rule is invariant" but "which *mechanisms* are
@@ -240,14 +79,21 @@ pooled decision rule can (Theorem 2); and the OOD risk of SCIN's
 predictive rule is the noise floor up to estimation error, with an
 exact decomposition of where pooled ERM's excess risk comes from and
 which selection errors are dangerous (Theorem 3, T3′).
+
 Empirically, SCIN matches the oracle under strong spurious shift (10×
-lower OOD error than ERM), scales to d = 200 on GPUs with flat runtime
+lower OOD error than ERM), scales to d = 400 on GPUs with flat runtime
 and precision 0.96–1.00, and delivers 2.3× better precision than
 pooled DAG learning on a physical system with a validated ground-truth
 causal graph (Causal Chambers) — with both negative results (neural
-SCIN, the full 38-node chamber graph) reported and analyzed.
+SCIN, the full 38-node chamber graph) reported and analyzed. Three
+contributions: (1) SCIN itself; (2) the theory above; (3) a
+falsification suite spanning synthetic → physical with two honest
+negatives and a sensitivity analysis that maps the selection window
+rather than cherry-picking it.
 
-## Results 2.1 prose (first pass)
+### 2. Results (~2,000 words; all figures here)
+
+#### Results 2.1 — Invariant-mechanism recovery: precision is the battleground (Exp A)
 
 We first test whether SCIN recovers the *invariant subgraph* when some
 mechanisms move. On d = 10 linear Gaussian DAGs with 3 of 10 edge
@@ -265,7 +111,26 @@ realized), removing per-environment deltas costs 0.11, removing the
 invariance statistic costs 0.13. Every component of the objective
 earns its place.
 
-## Results 2.3 prose (first pass)
+#### Results 2.2 — Scaling to d = 400 with flat runtime (GPU)
+
+Does the advantage survive in higher dimensions, where the number of
+candidate edges grows quadratically? We ran the same protocol on
+Erdős–Rényi DAGs spanning d = 25 to 400 (n = 2000 per environment,
+fp64, RTX PRO 6000 Blackwell GPU). SCIN maintains directed F1 of
+0.889 / 0.928 / 0.905 / 0.958 / 0.925 / 0.931 at d = 25 / 50 / 100 /
+200 / 300 / 400 with precision 0.956–1.00 throughout — no
+high-dimensional collapse at 16× the dimension at which most
+directional DAG-learning evaluations stop (Fig 2a). Runtime grows
+mildly and in the dimension term predicted by theory (24 s at d = 200,
+215 s at d = 400 for the SCIN stage, including the pooled warm-start),
+because the objective is a single matrix-valued optimization rather
+than the exponential subset search that defeats ICP. Sample complexity
+is favourable: at d = 10 F1 is flat from n = 250 per environment
+(Fig 2b), consistent with Theorem 1's log d scaling; recall, not
+precision, carries the residual weak-edge loss, exactly the undecidable
+band ([τ − Cλ₁, τ + Cλ₁]) predicted by the case analysis.
+
+#### Results 2.3 — OOD generalization: oracle-equal under spurious shift (Exp B + Exp E)
 
 Does invariant-mechanism selection buy OOD generalization? In Exp B,
 a spurious feature s ← y predicts the target in both training
@@ -287,56 +152,9 @@ ERM 1.339 ± 0.030). The grid itself is reported: both extreme failure
 modes are predicted by Theorem 3's selection-case analysis
 (tight thresholds drop a true parent — the seed-4 event; loose
 thresholds re-admit the spurious variable in 4/5 seeds at
-var_tol = 0.08).
+var_tol = 0.08). No cherry-picking: the grid is in the paper.
 
----
-
-## Abstract — finished draft (~190 words)
-
-Models trained on pooled data from multiple environments entangle two
-kinds of statistical regularities: causal mechanisms that remain fixed
-across environments, and environment-dependent mechanisms that do not.
-Under distribution shift only the former are safe to rely on, yet
-standard practice requires choosing between pooled fitting, which
-cannot in principle separate them, and invariance testing, which we
-show has no power in regimes of scarce, weak mechanism heterogeneity.
-Here we introduce the Sparse Causal Intervention Network (SCIN), a
-differentiable estimator that jointly fits a shared mechanism matrix
-and per-environment displacements under per-environment acyclicity and
-an equal-noise-variance orientation criterion, then retains exactly
-those edges whose coefficients are invariant across environments. We
-prove identifiability of the invariant mechanism set under quantitative
-heterogeneity, a constructive impossibility result for any pooled
-decision rule, and an exact out-of-distribution decomposition
-identifying which selection errors are harmful. Empirically, SCIN
-reaches the oracle's out-of-distribution error under strong spurious
-shift (10× lower than ERM), scales to d = 200 with flat runtime and
-precision ≈ 1, and achieves 2.3× the precision of pooled DAG learning
-on a physical system with validated causal ground truth. Both negative
-results are reported and analysed.
-
----
-
-## Results 2.2 prose (first pass)
-
-Does the advantage survive in higher dimensions, where the number of
-candidate edges grows quadratically? We ran the same protocol on
-Erdős–Rényi DAGs spanning d = 25 to 400 (n = 2000 per environment,
-fp64, RTX PRO 6000 Blackwell GPU). SCIN maintains directed F1 of
-0.889 / 0.928 / 0.905 / 0.958 / 0.925 / 0.931 at d = 25 / 50 / 100 /
-200 / 300 / 400 with precision 0.956–1.00 throughout — no
-high-dimensional collapse at 16× the dimension at which most
-directional DAG-learning evaluations stop (Fig 2a). Runtime grows
-mildly and in the dimension term predicted by theory (24 s at d = 200,
-215 s at d = 400 for the SCIN stage, including the pooled warm-start),
-because the objective is a single matrix-valued optimization rather
-than the exponential subset search that defeats ICP. Sample complexity
-is favourable: at d = 10 F1 is flat from n = 250 per environment
-(Fig 2b), consistent with Theorem 1's log d scaling; recall, not
-precision, carries the residual weak-edge loss, exactly the undecidable
-band ([τ − Cλ₁, τ + Cλ₁]) predicted by the case analysis.
-
-## Results 2.4 prose (first pass)
+#### Results 2.4 — The baseline class that cannot work: ICP has no power (Exp F)
 
 The canonical invariance procedure, Invariant Causal Prediction,
 proceeds by hypothesis testing: for every candidate parent set, test
@@ -355,7 +173,7 @@ margin γ − τ − Cλ₁. The two families are complementary rather than
 competing, and the crossover is a property of the heterogeneity
 budget, not of implementation quality.
 
-## Results 2.5 prose (first pass)
+#### Results 2.5 — Physical system: Causal Chambers light tunnel (Exp G)
 
 Synthetic victories are cheap; we therefore evaluated SCIN on the
 Causal Chambers light tunnel, a tabletop physical system with a
@@ -366,10 +184,10 @@ polarizers) as environments over an 18-node observable subgraph with
 F1 0.415 with **precision 0.688** (5 seeds, GPU; replicated at 10
 seeds: precision 0.612 ± 0.046, F1 0.365 ± 0.025), versus 0.345 with
 precision 0.300 for pooled NOTEARS, and roughly half the structural
-Hamming distance (31–34 vs 56–57) — Fig 7 shows the decisive
-picture: SCIN's selected edges are mostly physically real, while the
-pooled fit's are majority fabricated. Two properties matter for scientific use:
-first, SCIN's best threshold in the sweep is its a-priori default
+Hamming distance (29–34 vs 56–61) — Fig 7 shows the decisive picture:
+SCIN's selected edges are mostly physically real, while the pooled
+fit's are majority fabricated. Two properties matter for scientific
+use: first, SCIN's best threshold in the sweep is its a-priori default
 (τ = 0.1, var_tol = 0.02) — hyperparameters selected on synthetic
 data transfer to the physical system with no retuning; second, what
 it misses is explicable and bounded (unmeasured diode-internal
@@ -379,56 +197,58 @@ operating mode for experiment design: each of SCIN's selected edges is
 a testable hypothesis, whereas a 0.28-precision dense graph is not
 actionable.
 
+**How many environments should an experimenter run?** Our
+activation-count ladder on the chambers (E = 4 → 8 → 12 → 17, with
+strong interventions added at the upper rung) gives a decomposable
+answer: SCIN improves from E = 4 to E = 8 (F1 0.379 → 0.441,
+precision 0.524 → 0.591) and is the best method at every E, but is
+non-monotonic beyond — the strong interventions lower everyone's
+accuracy, and pooled NOTEARS degrades monotonically (0.359 → 0.264).
+Mechanism: interventions far from reference levels make
+per-environment linear fits noisier, inflating the cross-environment
+coefficient variance, and the invariance gate then rejects true edges
+(SCIN recall 0.297 → 0.216). This is a useful, actionable
+decomposition for experiment designers: more environments help while
+the heterogeneity stays in the locally-linear, mechanism-move regime;
+strong far-from-reference interventions do not (Fig 9).
 
-How many environments should an experimenter run? Our activation-count
-ladder on the chambers (E = 4 → 8 → 12 → 17, with strong interventions
-added at the upper rung) gives a decomposable answer: SCIN improves from
-E = 4 to E = 8 (F1 0.379 → 0.441, precision 0.524 → 0.591) and is the
-best method at every E, but is non-monotonic beyond — the strong
-interventions lower everyone's accuracy, and pooled NOTEARS degrades
-monotonically (0.359 → 0.264). Mechanism: interventions far from
-reference levels make per-environment linear fits noisier, inflating the
-cross-environment coefficient variance, and the invariance gate then
-rejects true edges (SCIN recall 0.297 → 0.216). This is a useful,
-actionable decomposition for experiment designers: more environments
-help while the heterogeneity stays in the locally-linear, mechanism-move
-regime; strong far-from-reference interventions do not (Fig 9).
-
-Controlled follow-up (Experiment H, Fig 10): replaying the same ladder on
-chambers-sized synthetic data, clean added environments give a monotonic
-ladder (F1 0.88 → 0.99), stronger mechanism moves accelerate the rise,
-a mild monotone distortion of the added environments has no measurable
-effect, and inflating only their residual variance (×6.25 on downstream,
-sensor-like nodes — the physical signature of operating far from reference
-levels) collapses F1 from 0.95 to 0.67 exactly like the chambers E=17 drop.
-The collapse is therefore a noise-budget effect of the added environments,
-not a curse of environment count — and the invariance statistic reacts
+**Controlled follow-up (Experiment H, Fig 10):** replaying the same
+ladder on chambers-sized synthetic data, clean added environments give
+a monotonic ladder (F1 0.88 → 0.99), stronger mechanism moves
+accelerate the rise, a mild monotone distortion of the added
+environments has no measurable effect, and inflating only their
+residual variance (×6.25 on downstream, sensor-like nodes — the
+physical signature of operating far from reference levels) collapses
+F1 from 0.95 to 0.67 exactly like the chambers E=17 drop. The collapse
+is therefore a noise-budget effect of the added environments, not a
+curse of environment count — and the invariance statistic reacts
 precisely as the selection-case analysis of Theorem 3 predicts.
 
-## Results 2.6 prose (first pass)
+#### Results 2.6 — Honest boundaries (reviewers trust these; Nature demands them)
 
 We report three boundary results with the same rigour as the wins.
-(i) The full 38-node chamber graph with all 33 interventions defeats
-SCIN (F1 0.161 vs pooled 0.383) — but the pooled "win" is structural
+**(i) The full 38-node chamber graph with all 33 interventions defeats
+SCIN** (F1 0.161 vs pooled 0.383) — but the pooled "win" is structural
 overfitting: 113 estimated edges against 57 ground-truth edges at
 precision 0.28. The true failure is upstream of selection: parents
 varying in 1 of 33 environments have unidentifiable coefficients,
 sin/cos mechanisms are not locally linear, and the light basis is
-multicollinear — precisely the regime T3′ excludes. (ii) Three design
-generations of a neural SCIN (random encoder; ERM-pretrained encoder;
-end-to-end joint training with augmented Lagrangians) failed to
-reliably beat an ERM-MLP under spurious shift across 5-seed GPU
-replications (best: OOD 0.436 ± 0.054 vs 0.383 ± 0.019). The lesson
-is that a free encoder entangles the spurious direction with causal
-latents, so the invariance statistic in latent space is fragile;
-invariance-aware encoder training remains open. (iii) Under mild
-mechanism nonlinearity (post-nonlinear distortions), the linear
-estimator degrades gracefully (F1 0.930 → 0.856 as distortion rises
-to maximal, with the reported improvement at small distortion 0.952),
-and under A1 violation the degradation is smooth, with SCIN degrading
-more slowly than pooled NOTEARS (Fig 4b).
+multicollinear — precisely the regime T3′ excludes. **(ii) Three
+design generations of a neural SCIN** (random encoder;
+ERM-pretrained encoder; end-to-end joint training with augmented
+Lagrangians) failed to reliably beat an ERM-MLP under spurious shift
+across 5-seed GPU replications (best: OOD 0.436 ± 0.054 vs
+0.383 ± 0.019). The lesson is that a free encoder entangles the
+spurious direction with causal latents, so the invariance statistic in
+latent space is fragile; invariance-aware encoder training remains
+open. **(iii) Under mild mechanism nonlinearity** (post-nonlinear
+distortions), the linear estimator degrades gracefully (F1 0.930 →
+0.856 as distortion rises to maximal, with a reported improvement at
+small distortion 0.952), and under A1 violation the degradation is
+smooth, with SCIN degrading more slowly than pooled NOTEARS (Fig 4b,
+Fig 8).
 
-## Discussion — first-pass prose
+### 3. Discussion (~1,000 words)
 
 **Invariance belongs on coefficients, not on risks.** IRM-family
 methods impose invariance on the risk functional; our Exp B shows why
@@ -453,6 +273,16 @@ We recommend reporting directed-F1 together with SHD accounting and
 precision at matched selection budget — F1 alone rewards dense
 overfitting at test-time-relevant thresholds.
 
+**Broader impact: precision as the actionable currency.** A selected
+invariant mechanism is a *testable hypothesis* with quantified
+trustworthiness (precision 0.61–0.79 on a physical system); a dense
+0.28-precision pooled graph is not actionable. Multi-center clinical
+studies are exactly multi-environment data; selecting which
+biomarker-target relationships are mechanism-level (invariant) vs
+site-specific (moved) is this paper's question in new clothes, and the
+precision-of-selection framing transfers directly (see Broad
+significance, below).
+
 **Limitations.** (1) Linear mechanisms: the theory is linear; PNL
 robustness is empirical. (2) A1 equal-variance identifiability:
 an assumption, degrading gracefully; A3 (invariance ⇒ relevance) is
@@ -463,12 +293,12 @@ open, documented failure; we claim nothing beyond the linear setting.
 
 **Outlook.** Invariance-aware representation learning (constraining
 encoders to preserve the coefficient-level invariance statistic),
-partial-observability extensions for rarely-varying parents
-(masked statistics are a first step, insufficient alone), and
-continuous orientation criteria robust to PNL distortions are the
-direct continuations.
+partial-observability extensions for rarely-varying parents (masked
+statistics are a first step, insufficient alone), and continuous
+orientation criteria robust to PNL distortions are the direct
+continuations.
 
-## Methods — first-pass prose (condensed; full detail in supplementary)
+### 4. Methods (~3,000 words, after main text; full detail in Supplementary)
 
 **SCIN objective.** For E environments, SCIN minimizes over
 W, {Δ_e}: L = Σ_e (2n_e)⁻¹‖X^e − X^e(W + Δ_e)‖²_F + λ₁‖W‖₁ +
@@ -486,6 +316,19 @@ Var_e(Ŵ_{e,ij}) ≤ v and mean_e |Ŵ_{e,ij}| ≥ τ, evaluated in raw
 criterion on standardized data silently penalizes the truth. A masked
 variant computes the statistic per parent over the environments in
 which that parent varies (per-env std > 0.1, ≥ 3 environments).
+
+**Theory (condensed).** Theorem 1: SCIN recovers the invariant-edge
+set S_inv with lasso sup-norm rates, under A2∗ (quantitative
+heterogeneity gap γ_v), A2-min (β-min γ > τ) and A4 (restricted
+eigenvalue on per-env ancestral designs), at regularization λ₁ =
+c₁√(log d / n_min). Theorem 2: constructive two-SCM
+indistinguishability for any pooled decision rule (β̄† = 2λ₁ ≠ 0).
+Theorem 3: exact OOD decomposition R_test(f_ERM) = σ² +
+‖η‖²_{Σ^{s|c,test}} for pooled ERM vs σ² + O((d_c + d_z) log d /
+n_min) for SCIN with correct selection, with a three-case analysis of
+selection errors (over-selection mild; under-selection = the Exp E
+seed-4 x2-drop, resolved by the var_tol × tau plateau). Full proofs:
+THEORY.md v2.0 (Supplementary).
 
 **Baselines.** NOTEARS-pooled (continuous DAG learning on the pooled
 sample, equal-variance-regularized), NOTEARS-per-env with edge-set
@@ -505,6 +348,44 @@ execute identical fp64 code as the CPU results. All metrics are mean
 headline: Cohen's d ≈ 22). Every experiment regenerates from committed
 scripts with pinned seeds; raw JSONs are committed alongside.
 
+**Reproducibility.** Single-cell Colab scripts + marimo notebook with
+SMOKE flags, commit-pinned; figure-generation script
+(`experiments/make_figures.py`); bug-and-fix log maintained in
+RESULTS.md (hstack interleave, fp32 L-BFGS overflow,
+standardized-units ev bug, topological-sort in synthetic replica).
+
+### Supplementary
+
+- Full theorem statements + proofs (THEORY.md v2.0 verbatim).
+- All result JSONs and logs; negative-result appendix (neural SCIN
+  3 generations; Chambers Part B failure-mode analysis).
+- Bug-and-fix log (serves reproducibility culture).
+- Exp H overwrite incident and raw-log reconstruction
+  (`exp_h_first_run_raw_log.txt`) — full-disclosure appendix note.
+
+---
+
+## Figure plan (final)
+
+| # | Content | Status |
+|---|---|---|
+| Fig 1 | Concept: mechanism moves + estimator schematic | done (`fig8_concept.png`) |
+| Fig 2 | Scaling (d → 400 GPU; n/env) | done (`fig1_scaling.png`) |
+| Fig 3 | OOD bars: Exp B + Exp E vs oracle floor | done (`fig3_ood_bars.png`) |
+| Fig 4 | Ablations + A1-violation panel | done (`fig4_ablation_violation.png`) |
+| Fig 5 | ICP power collapse | done (`fig5_icp.png`) |
+| Fig 6 | Selection-sensitivity plateau | done (`fig6_e_sens.png`) |
+| Fig 7 | Chambers: adjacency heatmaps GT/SCIN/pooled | done (`fig7_chambers_adjacency.png`, from `exp_g_matrices.json`; seed 0: GT 37, SCIN 14, pooled 46 selected edges) |
+| Fig 8 | PNL curve | done (`fig2_pnl.png`) |
+| Fig 9 | Environment-count scaling on chambers (E=4..17, honest non-monotonic) | done (`fig9_e_scaling.png`) |
+| Fig 10 | Exp H: controlled env-ladder (clean/strong/tanh/noise regimes) | done (`fig10_exp_h.png`) |
+
+All figures regenerate via `python3 experiments/make_figures.py`
+(verified 2026-11-25). `experiments/exp_g_matrices.py` refits one
+chambers window (seed 0) and stores the fitted adjacency matrices so
+the figure never needs refitting.
+
+---
 
 ## Broad significance positioning (anti-silo strategy, for Intro + Discussion)
 
@@ -541,6 +422,13 @@ audience far beyond the causal-discovery silo.
 - [x] Results prose (2.1-2.6) first pass done
 - [x] Discussion + Methods prose first pass done
 - [x] Cover letter (NMI) first-pass draft done
+- [x] v0.3 consistency pass: every prose number re-checked against
+      results/*.json on 2026-11-25; all 10 figures regenerate; stale
+      d=200 references updated to d=400; figure cross-references fixed
+      (Results 2.5 figure ref now Fig 7)
+- [ ] Reference list compilation (currently inline citations; compile
+      numbered bibliography at LaTeX stage)
+- [ ] LaTeX/manuscript conversion
 
 ---
 
