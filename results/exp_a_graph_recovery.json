@@ -1,0 +1,247 @@
+{
+  "hyperparameters": {
+    "corr_tau": 0.3,
+    "notears_lam1": 0.1,
+    "notears_lev": 1.0,
+    "notears_tau": 0.15,
+    "intx_lam1": 0.1,
+    "intx_lev": 1.0,
+    "intx_tau": 0.15,
+    "scin_lam1": 0.1,
+    "scin_lam3": 0.1,
+    "scin_lev": 1.0,
+    "scin_tau": 0.2,
+    "scin_vtol": 0.01
+  },
+  "val_seed": 100,
+  "test_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "config": {
+    "d": 10,
+    "n_edges": 10,
+    "n_envs": 2,
+    "n_per_env": 1000,
+    "n_perturbed": 3
+  },
+  "per_seed": [
+    {
+      "method": "CorrThresh",
+      "precision": 0.15625,
+      "recall": 0.7142857142857143,
+      "f1": 0.25641025641025644,
+      "shd": 29
+    },
+    {
+      "method": "NOTEARS-pooled",
+      "precision": 0.8571428571428571,
+      "recall": 0.8571428571428571,
+      "f1": 0.8571428571428571,
+      "shd": 2
+    },
+    {
+      "method": "NOTEARS-env-intersection",
+      "precision": 0.75,
+      "recall": 0.8571428571428571,
+      "f1": 0.7999999999999999,
+      "shd": 3
+    },
+    {
+      "method": "SCIN (ours)",
+      "precision": 1.0,
+      "recall": 0.8571428571428571,
+      "f1": 0.923076923076923,
+      "shd": 1
+    },
+    {
+      "method": "CorrThresh",
+      "precision": 0.20588235294117646,
+      "recall": 1.0,
+      "f1": 0.34146341463414637,
+      "shd": 27
+    },
+    {
+      "method": "NOTEARS-pooled",
+      "precision": 0.7777777777777778,
+      "recall": 1.0,
+      "f1": 0.8750000000000001,
+      "shd": 2
+    },
+    {
+      "method": "NOTEARS-env-intersection",
+      "precision": 0.7,
+      "recall": 1.0,
+      "f1": 0.8235294117647058,
+      "shd": 3
+    },
+    {
+      "method": "SCIN (ours)",
+      "precision": 0.875,
+      "recall": 1.0,
+      "f1": 0.9333333333333333,
+      "shd": 1
+    },
+    {
+      "method": "CorrThresh",
+      "precision": 0.1346153846153846,
+      "recall": 1.0,
+      "f1": 0.23728813559322035,
+      "shd": 45
+    },
+    {
+      "method": "NOTEARS-pooled",
+      "precision": 0.7,
+      "recall": 1.0,
+      "f1": 0.8235294117647058,
+      "shd": 3
+    },
+    {
+      "method": "NOTEARS-env-intersection",
+      "precision": 0.7777777777777778,
+      "recall": 1.0,
+      "f1": 0.8750000000000001,
+      "shd": 2
+    },
+    {
+      "method": "SCIN (ours)",
+      "precision": 0.875,
+      "recall": 1.0,
+      "f1": 0.9333333333333333,
+      "shd": 1
+    },
+    {
+      "method": "CorrThresh",
+      "precision": 0.175,
+      "recall": 1.0,
+      "f1": 0.2978723404255319,
+      "shd": 33
+    },
+    {
+      "method": "NOTEARS-pooled",
+      "precision": 0.7,
+      "recall": 1.0,
+      "f1": 0.8235294117647058,
+      "shd": 3
+    },
+    {
+      "method": "NOTEARS-env-intersection",
+      "precision": 0.7,
+      "recall": 1.0,
+      "f1": 0.8235294117647058,
+      "shd": 3
+    },
+    {
+      "method": "SCIN (ours)",
+      "precision": 0.875,
+      "recall": 1.0,
+      "f1": 0.9333333333333333,
+      "shd": 1
+    },
+    {
+      "method": "CorrThresh",
+      "precision": 0.175,
+      "recall": 1.0,
+      "f1": 0.2978723404255319,
+      "shd": 33
+    },
+    {
+      "method": "NOTEARS-pooled",
+      "precision": 0.7777777777777778,
+      "recall": 1.0,
+      "f1": 0.8750000000000001,
+      "shd": 2
+    },
+    {
+      "method": "NOTEARS-env-intersection",
+      "precision": 0.7777777777777778,
+      "recall": 1.0,
+      "f1": 0.8750000000000001,
+      "shd": 2
+    },
+    {
+      "method": "SCIN (ours)",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "shd": 0
+    }
+  ],
+  "summary": {
+    "CorrThresh": {
+      "precision": [
+        0.1693495475113122,
+        0.02356506446548413
+      ],
+      "recall": [
+        0.9428571428571428,
+        0.11428571428571428
+      ],
+      "f1": [
+        0.2861812974977374,
+        0.036349221760627846
+      ],
+      "shd": [
+        33.4,
+        6.248199740725323
+      ]
+    },
+    "NOTEARS-pooled": {
+      "precision": [
+        0.7625396825396825,
+        0.05871385445071344
+      ],
+      "recall": [
+        0.9714285714285715,
+        0.05714285714285716
+      ],
+      "f1": [
+        0.8508403361344538,
+        0.023233052606637463
+      ],
+      "shd": [
+        2.4,
+        0.4898979485566356
+      ]
+    },
+    "NOTEARS-env-intersection": {
+      "precision": [
+        0.7411111111111112,
+        0.0350660751956878
+      ],
+      "recall": [
+        0.9714285714285715,
+        0.05714285714285716
+      ],
+      "f1": [
+        0.8394117647058824,
+        0.030301255583975437
+      ],
+      "shd": [
+        2.6,
+        0.4898979485566356
+      ]
+    },
+    "SCIN (ours)": {
+      "precision": [
+        0.925,
+        0.06123724356957945
+      ],
+      "recall": [
+        0.9714285714285715,
+        0.05714285714285716
+      ],
+      "f1": [
+        0.9446153846153846,
+        0.02797575732715048
+      ],
+      "shd": [
+        0.8,
+        0.4
+      ]
+    }
+  }
+}

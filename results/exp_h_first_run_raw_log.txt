@@ -1,0 +1,44 @@
+[clean] seed=0 E=2: F1=0.872 [23s]
+[clean] seed=0 E=4: F1=0.919 [56s]
+[clean] seed=0 E=8: F1=0.944 [110s]
+[clean] seed=0 E=16: F1=0.971 [203s]
+[clean] seed=1 E=2: F1=0.829 [227s]
+[clean] seed=1 E=4: F1=0.944 [262s]
+[clean] seed=1 E=8: F1=1.000 [313s]
+[clean] seed=1 E=16: F1=1.000 [403s]
+[clean] seed=2 E=2: F1=0.944 [430s]
+[clean] seed=2 E=4: F1=1.000 [465s]
+[clean] seed=2 E=8: F1=1.000 [517s]
+[clean] seed=2 E=16: F1=1.000 [603s]
+== regime clean mean F1 by E: {2: (0.882, 0.048), 4: (0.954, 0.034), 8: (0.981, 0.026), 16: (0.99, 0.013)}
+[misspec] seed=0 E=2: F1=0.872 [625s]
+[misspec] seed=0 E=4: F1=0.919 [659s]
+[misspec] seed=0 E=8: F1=0.944 [708s]
+[misspec] seed=0 E=16: F1=0.971 [793s]
+[misspec] seed=1 E=2: F1=0.829 [817s]
+[misspec] seed=1 E=4: F1=0.944 [853s]
+[misspec] seed=1 E=8: F1=1.000 [905s]
+[misspec] seed=1 E=16: F1=1.000 [998s]
+[misspec] seed=2 E=2: F1=0.944 [1025s]
+[misspec] seed=2 E=4: F1=1.000 [1060s]
+[misspec] seed=2 E=8: F1=1.000 [1114s]
+[misspec] seed=2 E=16: F1=1.000 [1201s]
+== regime misspec mean F1 by E: {2: (0.882, 0.048), 4: (0.954, 0.034), 8: (0.981, 0.026), 16: (0.99, 0.013)}
+[strong] seed=0 E=2: F1=0.872 [1225s]
+[strong] seed=0 E=4: F1=0.914 [1258s]
+[strong] seed=0 E=8: F1=0.941 [1309s]
+[strong] seed=0 E=16: F1=0.970 [1400s]
+[strong] seed=1 E=2: F1=0.895 [1425s]
+[strong] seed=1 E=4: F1=1.000 [1461s]
+[strong] seed=1 E=8: F1=1.000 [1514s]
+[strong] seed=1 E=16: F1=1.000 [1606s]
+[strong] seed=2 E=2: F1=1.000 [1632s]
+[strong] seed=2 E=4: F1=1.000 [1668s]
+[strong] seed=2 E=8: F1=1.000 [1720s]
+[strong] seed=2 E=16: F1=1.000 [1805s]
+== regime strong mean F1 by E: {2: (0.922, 0.056), 4: (0.971, 0.04), 8: (0.98, 0.028), 16: (0.99, 0.014)}
+
+saved results/exp_h_env_ladder.json
+  clean    : {2: (0.882, 0.048), 4: (0.954, 0.034), 8: (0.981, 0.026), 16: (0.99, 0.013)}
+  misspec  : {2: (0.882, 0.048), 4: (0.954, 0.034), 8: (0.981, 0.026), 16: (0.99, 0.013)}
+  strong   : {2: (0.922, 0.056), 4: (0.971, 0.04), 8: (0.98, 0.028), 16: (0.99, 0.014)}
