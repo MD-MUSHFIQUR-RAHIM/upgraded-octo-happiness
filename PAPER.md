@@ -465,10 +465,13 @@ audience far beyond the causal-discovery silo.
       results/*.json; all figures regenerate; stale d=200 references
       updated to d=400; figure cross-references fixed
 - [x] v0.4: Experiment I added (Results 2.6 -> 2.7 renumber, Fig 11); abstract updated
+- [x] paper/main.tex built from PAPER.md via experiments/build_manuscript.py
+      (pandoc; single-column article; 4 sections, 7 subsections, 11 figure
+      environments; ASCII-clean — compiles on Overleaf, untested locally,
+      no LaTeX binary in the sandbox)
 - [ ] Stability-rule transfer check on chambers (GPU cell, small)
 - [ ] Reference list compilation (currently inline citations; compile
       numbered bibliography at LaTeX stage)
-- [ ] LaTeX/manuscript conversion
 
 ---
 
