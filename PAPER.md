@@ -78,11 +78,11 @@ Fig 1 (exp A table + Phase-2 ablation panel).
   without it); invariance statistic and per-env deltas each carry
   ~0.11–0.13. Every component earns its place.
 
-#### Results 2.2 — Scaling to d = 200 on GPU with flat runtime
+#### Results 2.2 — Scaling to d = 400 on GPU with flat runtime
 Fig 2 (fig1_scaling.png).
-- F1 0.889/0.928/0.905/0.958 at d = 25/50/100/200 (n=2000/env,
-  5-seed CPU + RTX PRO 6000 Blackwell GPU runs identical concept;
-  precision 0.96–1.00, SHD 5–18, runtime 23 s at d=200, fp64).
+- F1 0.889/0.928/0.905/0.958/0.925/0.931 at d = 25/50/100/200/300/400
+  (n=2000/env, RTX PRO 6000 Blackwell GPU; precision 0.96–1.00,
+  SCIN stage 24 s at d=200, 215 s at d=400, fp64).
 - Sample-complexity: flat F1 from n=250/env at d=10.
 
 #### Results 2.3 — OOD generalization: oracle-equal under spurious shift
@@ -190,7 +190,7 @@ Fig 5 (new: Exp G adjacency comparison — TO MAKE; currently tables only).
 | # | Content | Status |
 |---|---|---|
 | Fig 1 | Concept: mechanism moves + estimator schematic | done (`fig8_concept.png`) |
-| Fig 2 | Scaling (d → 200 GPU; n/env) | done (`fig1_scaling.png`) |
+| Fig 2 | Scaling (d → 400 GPU; n/env) | done (`fig1_scaling.png`) |
 | Fig 3 | OOD bars: Exp B + Exp E vs oracle floor | done (`fig3_ood_bars.png`) |
 | Fig 4 | Ablations + A1-violation panel | done (`fig4_ablation_violation.png`) |
 | Fig 5 | ICP power collapse | done (`fig5_icp.png`) |
